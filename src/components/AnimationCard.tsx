@@ -46,7 +46,7 @@ export function AnimationCard({
   return (
     <article
       id={id}
-      className="group relative overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] shadow-[0_8px_28px_-20px_color-mix(in_oklab,var(--text-1)_55%,transparent)] transition-all duration-300"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] shadow-[0_8px_28px_-20px_color-mix(in_oklab,var(--text-1)_55%,transparent)] transition-all duration-300"
       style={accent ? { boxShadow: `0 10px 30px -20px ${accent}` } : undefined}
     >
       <div className="relative flex min-h-[210px] items-center justify-center p-7">
@@ -74,7 +74,7 @@ export function AnimationCard({
 
       <div
         id={`${id}-code-panel`}
-        className="relative overflow-hidden rounded-b-2xl border border-t-0 border-[var(--card-border)] bg-[var(--surface-3)] p-4 pt-9"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl border border-t-0 border-[var(--card-border)] bg-[var(--surface-3)] p-4 pt-9"
       >
         <button
           onClick={handleCopy}
@@ -87,7 +87,7 @@ export function AnimationCard({
               ? "Failed"
               : "Copy"}
         </button>
-        <pre className="code-block overflow-hidden">
+        <pre className="code-block min-h-0 flex-1 overflow-hidden">
           <code className="font-mono text-[10px] leading-relaxed text-[var(--text-3)]">
             {code}
           </code>

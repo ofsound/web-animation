@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AnimationCategory } from "../data/animations";
-import { CategoryIcon } from "./CategoryIcon";
 
 interface CategorySectionProps {
   category: AnimationCategory;
@@ -55,6 +54,9 @@ export function CategorySection({
           >
             {category.label}
           </h2>
+          <span className="font-mono text-sm text-[var(--text-3)]">
+            {count} {count === 1 ? "demo" : "demos"}
+          </span>
         </div>
       </header>
 
