@@ -17,7 +17,14 @@ function App() {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const scrollTo = (id: string) => {
-    sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth" });
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    sectionRefs.current[id]?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
   };
 
   return (
@@ -84,7 +91,7 @@ function App() {
           ref={(el) => {
             sectionRefs.current["hover"] = el;
           }}
-          className="pt-16"
+          className="scroll-mt-24 pt-16"
         >
           <SectionHeader
             emoji="🖱️"
@@ -102,7 +109,7 @@ function App() {
           ref={(el) => {
             sectionRefs.current["entrance"] = el;
           }}
-          className="pt-16"
+          className="scroll-mt-24 pt-16"
         >
           <SectionHeader
             emoji="🚪"
@@ -120,7 +127,7 @@ function App() {
           ref={(el) => {
             sectionRefs.current["loading"] = el;
           }}
-          className="pt-16"
+          className="scroll-mt-24 pt-16"
         >
           <SectionHeader
             emoji="⏳"
@@ -138,7 +145,7 @@ function App() {
           ref={(el) => {
             sectionRefs.current["text"] = el;
           }}
-          className="pt-16"
+          className="scroll-mt-24 pt-16"
         >
           <SectionHeader
             emoji="✍️"
@@ -156,7 +163,7 @@ function App() {
           ref={(el) => {
             sectionRefs.current["complex"] = el;
           }}
-          className="pt-16"
+          className="scroll-mt-24 pt-16"
         >
           <SectionHeader
             emoji="🎭"

@@ -93,13 +93,11 @@ export function TextAnimations() {
         title="Glowing Text"
         description="Text with a pulsing text-shadow glow effect using a custom animation."
         category="Text"
-        code={`<h2 className="text-3xl font-bold text-accent
-  [animation:pulse-glow_2s_ease-in-out_infinite]
-  [text-shadow:0_0_10px_oklch(0.7_0.18_270/0.5)]">
+        code={`<h2 className="animate-text-glow text-3xl font-bold text-accent">
   Glowing
 </h2>`}
       >
-        <h2 className="text-accent text-3xl font-bold [text-shadow:0_0_10px_oklch(0.7_0.18_270/0.5),0_0_40px_oklch(0.7_0.18_270/0.2)]">
+        <h2 className="animate-text-glow text-accent text-3xl font-bold">
           Glowing ✨
         </h2>
       </AnimationCard>

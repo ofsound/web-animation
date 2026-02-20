@@ -176,6 +176,8 @@ export function HoverInteractions() {
       >
         <input
           type="text"
+          id="ring-focus-demo"
+          name="ring-focus-demo"
           placeholder="Click to focus..."
           className="focus:border-accent focus:ring-accent/30 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition-all duration-300 outline-none placeholder:text-white/30 focus:shadow-[0_0_20px_oklch(0.7_0.18_270/0.15)] focus:ring-2"
         />
