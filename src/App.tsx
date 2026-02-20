@@ -26,6 +26,9 @@ const categoryComponents: Record<AnimationCategoryId, ComponentType> = {
 
 const sectionIds = animationCategories.map((category) => category.id);
 
+/** Time to wait for section scroll before scrolling to demo; matches typical scroll duration. */
+const SCROLL_DURATION_MS = 520;
+
 function App() {
   const { theme, toggleTheme } = useTheme();
   const activeSection = useActiveSection(sectionIds);
@@ -61,7 +64,7 @@ function App() {
       if (shouldUpdateHash) {
         window.history.replaceState(null, "", `#${demoId}`);
       }
-    }, 520);
+    }, SCROLL_DURATION_MS);
   }, [scrollToSection]);
 
   useEffect(() => {
@@ -114,7 +117,7 @@ function App() {
         onSelect={scrollToSection}
       />
 
-      <Hero />
+      <Hero onScrollToDemo={openDemo} />
 
       <main className="relative mx-auto max-w-7xl px-5 pb-24 sm:px-6">
         <div className="pt-10 space-y-7 sm:space-y-10">

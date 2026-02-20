@@ -1,4 +1,14 @@
-export function Hero() {
+interface HeroProps {
+  onScrollToDemo?: (demoId: string) => void;
+}
+
+const FEATURED_DEMOS = [
+  { id: "hover-scale-glow", label: "Scale & Glow" },
+  { id: "entrance-fade-in-up", label: "Fade In Up" },
+  { id: "text-gradient-shift", label: "Gradient Text" },
+] as const;
+
+export function Hero({ onScrollToDemo }: HeroProps) {
   return (
     <section className="relative overflow-hidden border-b border-[var(--card-border)] py-18 sm:py-24">
       <div className="pointer-events-none absolute inset-0 [background:radial-gradient(1200px_circle_at_18%_-5%,var(--hero-glow),transparent_45%),radial-gradient(900px_circle_at_80%_0%,color-mix(in_oklab,var(--brand-2)_16%,transparent),transparent_48%)]" />
@@ -19,6 +29,20 @@ export function Hero() {
           built with React and Tailwind CSS v4. Explore featured techniques, copy code,
           and deep-link into any demo instantly.
         </p>
+        {onScrollToDemo && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {FEATURED_DEMOS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onScrollToDemo(id)}
+                className="rounded-full border border-[var(--card-border)] bg-[var(--surface-2)] px-4 py-2 font-mono text-xs text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)]"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-export type Theme = "light" | "dark";
 export type AnimationCategoryId = "hover" | "entrance" | "loading" | "text" | "complex";
 export type AnimationDifficulty = "Basic" | "Intermediate" | "Advanced";
 export type CategoryIconName = "pointer" | "spark" | "loader" | "type" | "layers";

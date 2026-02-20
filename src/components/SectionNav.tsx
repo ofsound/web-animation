@@ -1,4 +1,5 @@
-import type { AnimationCategory, Theme } from "../data/animations";
+import type { AnimationCategory } from "../data/animations";
+import type { Theme } from "../theme-init";
 import { CategoryIcon } from "./CategoryIcon";
 
 interface SectionNavProps {

@@ -1,18 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Theme } from "../data/animations";
-
-const THEME_STORAGE_KEY = "tailwind-gallery-theme";
-
-function getPreferredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (storedTheme === "light" || storedTheme === "dark") {
-    return storedTheme;
-  }
-
-  return "dark";
-}
+import { getPreferredTheme, THEME_STORAGE_KEY, type Theme } from "../theme-init";
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(getPreferredTheme);
@@ -25,7 +12,6 @@ export function useTheme() {
   const value = useMemo(
     () => ({
       theme,
-      setTheme,
       toggleTheme: () => setTheme((current) => (current === "dark" ? "light" : "dark")),
     }),
     [theme],

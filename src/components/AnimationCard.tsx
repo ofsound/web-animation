@@ -1,78 +1,43 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   animationDemoMetaById,
-  type AnimationDifficulty,
+  type AnimationCategoryId,
   type AnimationDemo,
 } from "../data/animations";
 
 type CopyResult = "success" | "error";
 
+/** Resolve display label from category id (e.g. "hover" -> "Hover") */
+function categoryLabelFromId(categoryId: AnimationCategoryId): string {
+  return categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
+}
+
 interface AnimationCardProps {
+  /** Demo id; metadata (title, description, code, etc.) is read from animationDemoMetaById */
   id: string;
-  title: string;
-  description: string;
-  code: string;
+  /** The live preview (JSX) for the animation demo */
   children: ReactNode;
-  category: string;
-  difficulty?: AnimationDifficulty;
-  tags?: string[];
   accent?: string;
   onCopyResult?: (result: CopyResult, demoId: string) => void;
 }
 
-function inferDifficultyFromCode(code: string): AnimationDifficulty {
-  if (code.length >= 280) return "Advanced";
-  if (code.length >= 170) return "Intermediate";
-  return "Basic";
-}
-
-function inferTagsFromText(value: string) {
-  const source = value.toLowerCase();
-  const tags: string[] = [];
-
-  if (source.includes("hover") || source.includes("focus")) tags.push("interaction");
-  if (source.includes("gradient") || source.includes("shimmer")) tags.push("gradient");
-  if (source.includes("shadow") || source.includes("glow") || source.includes("ring")) tags.push("shadow");
-  if (source.includes("spin") || source.includes("bounce") || source.includes("pulse") || source.includes("orbit")) {
-    tags.push("loop");
-  }
-  if (source.includes("translate") || source.includes("scale") || source.includes("rotate") || source.includes("skew")) {
-    tags.push("transform");
-  }
-
-  return tags.slice(0, 3);
-}
-
-export function AnimationCard({
-  id,
-  title,
-  description,
-  code,
-  children,
-  category,
-  difficulty,
-  tags,
-  accent,
-  onCopyResult,
-}: AnimationCardProps) {
+export function AnimationCard({ id, children, accent, onCopyResult }: AnimationCardProps) {
   const [showCode, setShowCode] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [replayKey, setReplayKey] = useState(0);
 
-  const metadata = animationDemoMetaById.get(id) as AnimationDemo | undefined;
+  const metadata = animationDemoMetaById.get(id);
+  if (!metadata) {
+    throw new Error(`AnimationCard: no metadata found for demo id "${id}"`);
+  }
 
-  const resolvedDifficulty =
-    difficulty ?? metadata?.difficulty ?? inferDifficultyFromCode(code);
+  const { title, description, code, category, difficulty, tags } = metadata as AnimationDemo;
+  const categoryLabel = categoryLabelFromId(category);
 
-  const resolvedTags = useMemo(() => {
-    if (tags && tags.length > 0) return tags;
-    if (metadata?.tags && metadata.tags.length > 0) return metadata.tags;
-
-    const inferred = inferTagsFromText(`${title} ${description} ${code}`);
-    if (inferred.length > 0) return inferred;
-
-    return [category.toLowerCase()];
-  }, [category, code, description, metadata?.tags, tags, title]);
+  const resolvedTags = useMemo(
+    () => (tags.length > 0 ? tags : [categoryLabel.toLowerCase()]),
+    [tags, categoryLabel],
+  );
 
   const handleCopy = async () => {
     try {
@@ -98,11 +63,11 @@ export function AnimationCard({
       <div className="relative border-b border-[var(--card-border)] px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="inline-flex items-center gap-1 rounded-full border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] tracking-wide text-[var(--text-2)] uppercase">
-            {category}
+            {categoryLabel}
           </p>
           <div className="flex flex-wrap items-center gap-1">
             <span className="rounded-full border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-2)]">
-              {resolvedDifficulty}
+              {difficulty}
             </span>
             {resolvedTags.map((tag) => (
               <span
