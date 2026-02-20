@@ -1,4 +1,11 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import {
+  animationDemoMetaById,
+  type AnimationDifficulty,
+  type AnimationDemo,
+} from "../data/animations";
+
+type CopyResult = "success" | "error";
 
 interface AnimationCardProps {
   id: string;
@@ -7,6 +14,33 @@ interface AnimationCardProps {
   code: string;
   children: ReactNode;
   category: string;
+  difficulty?: AnimationDifficulty;
+  tags?: string[];
+  accent?: string;
+  onCopyResult?: (result: CopyResult, demoId: string) => void;
+}
+
+function inferDifficultyFromCode(code: string): AnimationDifficulty {
+  if (code.length >= 280) return "Advanced";
+  if (code.length >= 170) return "Intermediate";
+  return "Basic";
+}
+
+function inferTagsFromText(value: string) {
+  const source = value.toLowerCase();
+  const tags: string[] = [];
+
+  if (source.includes("hover") || source.includes("focus")) tags.push("interaction");
+  if (source.includes("gradient") || source.includes("shimmer")) tags.push("gradient");
+  if (source.includes("shadow") || source.includes("glow") || source.includes("ring")) tags.push("shadow");
+  if (source.includes("spin") || source.includes("bounce") || source.includes("pulse") || source.includes("orbit")) {
+    tags.push("loop");
+  }
+  if (source.includes("translate") || source.includes("scale") || source.includes("rotate") || source.includes("skew")) {
+    tags.push("transform");
+  }
+
+  return tags.slice(0, 3);
 }
 
 export function AnimationCard({
@@ -16,83 +50,137 @@ export function AnimationCard({
   code,
   children,
   category,
+  difficulty,
+  tags,
+  accent,
+  onCopyResult,
 }: AnimationCardProps) {
   const [showCode, setShowCode] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [replaying, setReplaying] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [replayKey, setReplayKey] = useState(0);
+
+  const metadata = animationDemoMetaById.get(id) as AnimationDemo | undefined;
+
+  const resolvedDifficulty =
+    difficulty ?? metadata?.difficulty ?? inferDifficultyFromCode(code);
+
+  const resolvedTags = useMemo(() => {
+    if (tags && tags.length > 0) return tags;
+    if (metadata?.tags && metadata.tags.length > 0) return metadata.tags;
+
+    const inferred = inferTagsFromText(`${title} ${description} ${code}`);
+    if (inferred.length > 0) return inferred;
+
+    return [category.toLowerCase()];
+  }, [category, code, description, metadata?.tags, tags, title]);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopyState("copied");
+      onCopyResult?.("success", id);
+    } catch {
+      setCopyState("failed");
+      onCopyResult?.("error", id);
+    }
 
-  const handleReplay = () => {
-    setReplaying(true);
-    setTimeout(() => setReplaying(false), 50);
+    setTimeout(() => setCopyState("idle"), 1800);
   };
 
   return (
-    <div
+    <article
       id={id}
-      className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05]"
+      className="group relative overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] shadow-[0_8px_28px_-20px_color-mix(in_oklab,var(--text-1)_55%,transparent)] transition-all duration-300 hover:border-[color-mix(in_oklab,var(--brand)_58%,var(--card-border))]"
+      style={accent ? { boxShadow: `0 10px 30px -20px ${accent}` } : undefined}
     >
-      {/* Category badge */}
-      <div className="absolute top-3 left-3 z-10">
-        <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 font-mono text-[10px] tracking-wider text-white/40 uppercase">
-          {category}
-        </span>
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 [background:radial-gradient(circle_at_100%_0%,color-mix(in_oklab,var(--brand)_18%,transparent),transparent_38%)]" />
+
+      <div className="relative border-b border-[var(--card-border)] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="inline-flex items-center gap-1 rounded-full border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] tracking-wide text-[var(--text-2)] uppercase">
+            {category}
+          </p>
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="rounded-full border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-2)]">
+              {resolvedDifficulty}
+            </span>
+            {resolvedTags.map((tag) => (
+              <span
+                key={`${id}-${tag}`}
+                className="rounded-full border border-[var(--card-border)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-3)]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Preview area */}
-      <div className="flex min-h-[200px] items-center justify-center p-8 pt-12">
-        {!replaying && children}
+      <div className="relative flex min-h-[210px] items-center justify-center p-7">
+        <div key={`${id}-${replayKey}`}>{children}</div>
       </div>
 
-      {/* Info bar */}
-      <div className="border-t border-white/[0.06] px-5 py-4">
-        <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white/90">{title}</h3>
+      <div className="relative border-t border-[var(--card-border)] px-4 py-4">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <h3 className="text-sm font-semibold text-[var(--text-1)]">{title}</h3>
           <div className="flex gap-1.5">
             <button
-              onClick={handleReplay}
-              className="rounded-md bg-white/[0.06] px-2 py-1 font-mono text-[10px] text-white/50 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+              onClick={() => setReplayKey((value) => value + 1)}
+              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               title="Replay animation"
+              aria-label={`Replay ${title} animation`}
             >
-              ↻ Replay
+              Replay
             </button>
             <button
-              onClick={() => setShowCode(!showCode)}
-              className="rounded-md bg-white/[0.06] px-2 py-1 font-mono text-[10px] text-white/50 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+              onClick={() => setShowCode((value) => !value)}
+              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              aria-expanded={showCode}
+              aria-controls={`${id}-code-panel`}
             >
               {showCode ? "Hide" : "Code"}
             </button>
           </div>
         </div>
-        <p className="text-xs leading-relaxed text-white/40">{description}</p>
+        <p className="text-xs leading-relaxed text-[var(--text-2)]">{description}</p>
       </div>
 
-      {/* Code panel */}
-      {showCode && (
-        <div className="border-t border-white/[0.06] bg-black/40">
-          <div className="flex items-center justify-between border-b border-white/[0.04] px-4 py-2">
-            <span className="font-mono text-[10px] tracking-wider text-white/30 uppercase">
+      <div
+        id={`${id}-code-panel`}
+        className={`grid transition-all duration-300 ${
+          showCode ? "grid-rows-[1fr] border-t border-[var(--card-border)]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--card-border)] bg-[var(--surface-3)] px-4 py-2">
+            <span className="font-mono text-[10px] tracking-wider text-[var(--text-3)] uppercase">
               JSX / Tailwind
             </span>
             <button
               onClick={handleCopy}
-              className="rounded-md bg-white/[0.06] px-2 py-1 font-mono text-[10px] text-white/50 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              aria-label={`Copy code for ${title}`}
             >
-              {copied ? "✓ Copied" : "Copy"}
+              {copyState === "copied"
+                ? "Copied"
+                : copyState === "failed"
+                  ? "Failed"
+                  : "Copy"}
             </button>
           </div>
-          <pre className="code-block overflow-x-auto p-4">
-            <code className="font-mono text-xs leading-relaxed text-white/60">
-              {code}
-            </code>
+          <pre className="code-block overflow-x-auto bg-[var(--surface-1)] p-4">
+            <code className="font-mono text-xs leading-relaxed text-[var(--text-2)]">{code}</code>
           </pre>
         </div>
-      )}
-    </div>
+      </div>
+
+      <span className="sr-only" aria-live="polite">
+        {copyState === "copied"
+          ? `${title} code copied to clipboard.`
+          : copyState === "failed"
+            ? `Failed to copy ${title} code.`
+            : ""}
+      </span>
+    </article>
   );
 }
