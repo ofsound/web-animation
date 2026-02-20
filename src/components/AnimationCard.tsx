@@ -46,11 +46,9 @@ export function AnimationCard({
   return (
     <article
       id={id}
-      className="group relative overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] shadow-[0_8px_28px_-20px_color-mix(in_oklab,var(--text-1)_55%,transparent)] transition-all duration-300 hover:border-[color-mix(in_oklab,var(--brand)_58%,var(--card-border))]"
+      className="group relative overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] shadow-[0_8px_28px_-20px_color-mix(in_oklab,var(--text-1)_55%,transparent)] transition-all duration-300"
       style={accent ? { boxShadow: `0 10px 30px -20px ${accent}` } : undefined}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 [background:radial-gradient(circle_at_100%_0%,color-mix(in_oklab,var(--brand)_18%,transparent),transparent_38%)] group-hover:opacity-100" />
-
       <div className="relative flex min-h-[210px] items-center justify-center p-7">
         <div key={`${id}-${replayKey}`}>{children}</div>
       </div>
@@ -76,28 +74,24 @@ export function AnimationCard({
 
       <div
         id={`${id}-code-panel`}
-        className="border-t border-[var(--card-border)]"
+        className="relative overflow-hidden rounded-b-2xl border border-t-0 border-[var(--card-border)] bg-[var(--surface-3)] p-4 pt-9"
       >
-        <div className="overflow-hidden">
-          <div className="flex items-center justify-end border-b border-[var(--card-border)] bg-[var(--surface-3)] px-4 py-2">
-            <button
-              onClick={handleCopy}
-              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
-              aria-label={`Copy code for ${title}`}
-            >
-              {copyState === "copied"
-                ? "Copied"
-                : copyState === "failed"
-                  ? "Failed"
-                  : "Copy"}
-            </button>
-          </div>
-          <pre className="code-block overflow-x-auto bg-[var(--surface-1)] p-4">
-            <code className="font-mono text-xs leading-relaxed text-[var(--text-2)]">
-              {code}
-            </code>
-          </pre>
-        </div>
+        <button
+          onClick={handleCopy}
+          className="absolute right-3 top-3 z-10 rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+          aria-label={`Copy code for ${title}`}
+        >
+          {copyState === "copied"
+            ? "Copied"
+            : copyState === "failed"
+              ? "Failed"
+              : "Copy"}
+        </button>
+        <pre className="code-block overflow-hidden">
+          <code className="font-mono text-[10px] leading-relaxed text-[var(--text-3)]">
+            {code}
+          </code>
+        </pre>
       </div>
 
       <span className="sr-only" aria-live="polite">

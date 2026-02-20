@@ -50,21 +50,24 @@ function App() {
     }
   }, []);
 
-  const openDemo = useCallback((demoId: string, shouldUpdateHash = true) => {
-    const categoryId = demoCategoryById.get(demoId);
-    if (!categoryId) return;
+  const openDemo = useCallback(
+    (demoId: string, shouldUpdateHash = true) => {
+      const categoryId = demoCategoryById.get(demoId);
+      if (!categoryId) return;
 
-    scrollToSection(categoryId, false);
+      scrollToSection(categoryId, false);
 
-    window.setTimeout(() => {
-      const demo = document.getElementById(demoId);
-      demo?.scrollIntoView({ behavior: getScrollBehavior(), block: "start" });
+      window.setTimeout(() => {
+        const demo = document.getElementById(demoId);
+        demo?.scrollIntoView({ behavior: getScrollBehavior(), block: "start" });
 
-      if (shouldUpdateHash) {
-        window.history.replaceState(null, "", `#${demoId}`);
-      }
-    }, SCROLL_DURATION_MS);
-  }, [scrollToSection]);
+        if (shouldUpdateHash) {
+          window.history.replaceState(null, "", `#${demoId}`);
+        }
+      }, SCROLL_DURATION_MS);
+    },
+    [scrollToSection],
+  );
 
   useEffect(() => {
     const handleHashNavigation = () => {
@@ -92,7 +95,7 @@ function App() {
       <header className="sticky top-0 z-50 border-b border-[var(--card-border)] bg-[color-mix(in_oklab,var(--surface-1)_86%,transparent)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-6">
           <div>
-            <h1 className="text-balance text-lg leading-tight font-black tracking-[-0.02em] text-[var(--text-1)] sm:text-xl">
+            <h1 className="text-lg leading-tight font-black tracking-[-0.02em] text-balance text-[var(--text-1)] sm:text-xl">
               Tailwind Animation Editorial Gallery
             </h1>
             <p
@@ -100,7 +103,7 @@ function App() {
               data-source-file="src/App.tsx"
               data-source-line="98"
             >
-              50 demos · React 19 · Tailwind v4
+              Feb 2026 - Tailwind v4
             </p>
           </div>
 
@@ -121,7 +124,7 @@ function App() {
       />
 
       <main className="relative mx-auto max-w-7xl px-5 pb-24 sm:px-6">
-        <div className="pt-10 space-y-7 sm:space-y-10">
+        <div className="space-y-7 pt-10 sm:space-y-10">
           {animationCategories.map((category, index) => {
             const SectionComponent = categoryComponents[category.id];
 
