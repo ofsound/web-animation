@@ -16,16 +16,6 @@ describe("AnimationCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders category label from metadata", () => {
-    render(
-      <AnimationCard id="hover-scale-glow">
-        <span>Preview</span>
-      </AnimationCard>,
-    );
-
-    expect(screen.getByText("Hover")).toBeInTheDocument();
-  });
-
   it("throws when id is not in metadata", () => {
     expect(() =>
       render(

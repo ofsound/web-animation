@@ -5,7 +5,6 @@ import { HoverInteractions } from "./categories/HoverInteractions";
 import { LoadingStates } from "./categories/LoadingStates";
 import { TextAnimations } from "./categories/TextAnimations";
 import { CategorySection } from "./components/CategorySection";
-import { Hero } from "./components/Hero";
 import { MobileJumpBar, SectionNav } from "./components/SectionNav";
 import {
   animationCategories,
@@ -116,8 +115,6 @@ function App() {
         activeSection={activeSection}
         onSelect={scrollToSection}
       />
-
-      <Hero onScrollToDemo={openDemo} />
 
       <main className="relative mx-auto max-w-7xl px-5 pb-24 sm:px-6">
         <div className="pt-10 space-y-7 sm:space-y-10">

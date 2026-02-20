@@ -1,16 +1,7 @@
-import { useMemo, useState, type ReactNode } from "react";
-import {
-  animationDemoMetaById,
-  type AnimationCategoryId,
-  type AnimationDemo,
-} from "../data/animations";
+import { useState, type ReactNode } from "react";
+import { animationDemoMetaById, type AnimationDemo } from "../data/animations";
 
 type CopyResult = "success" | "error";
-
-/** Resolve display label from category id (e.g. "hover" -> "Hover") */
-function categoryLabelFromId(categoryId: AnimationCategoryId): string {
-  return categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
-}
 
 interface AnimationCardProps {
   /** Demo id; metadata (title, description, code, etc.) is read from animationDemoMetaById */
@@ -31,13 +22,7 @@ export function AnimationCard({ id, children, accent, onCopyResult }: AnimationC
     throw new Error(`AnimationCard: no metadata found for demo id "${id}"`);
   }
 
-  const { title, description, code, category, difficulty, tags } = metadata as AnimationDemo;
-  const categoryLabel = categoryLabelFromId(category);
-
-  const resolvedTags = useMemo(
-    () => (tags.length > 0 ? tags : [categoryLabel.toLowerCase()]),
-    [tags, categoryLabel],
-  );
+  const { title, description, code } = metadata as AnimationDemo;
 
   const handleCopy = async () => {
     try {
@@ -60,32 +45,11 @@ export function AnimationCard({ id, children, accent, onCopyResult }: AnimationC
     >
       <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 [background:radial-gradient(circle_at_100%_0%,color-mix(in_oklab,var(--brand)_18%,transparent),transparent_38%)]" />
 
-      <div className="relative border-b border-[var(--card-border)] px-4 py-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="inline-flex items-center gap-1 rounded-full border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] tracking-wide text-[var(--text-2)] uppercase">
-            {categoryLabel}
-          </p>
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="rounded-full border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-2)]">
-              {difficulty}
-            </span>
-            {resolvedTags.map((tag) => (
-              <span
-                key={`${id}-${tag}`}
-                className="rounded-full border border-[var(--card-border)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-3)]"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div className="relative flex min-h-[210px] items-center justify-center p-7">
         <div key={`${id}-${replayKey}`}>{children}</div>
       </div>
 
-      <div className="relative border-t border-[var(--card-border)] px-4 py-4">
+      <div className="relative px-4 py-4">
         <div className="mb-2 flex items-start justify-between gap-2">
           <h3 className="text-sm font-semibold text-[var(--text-1)]">{title}</h3>
           <div className="flex gap-1.5">
