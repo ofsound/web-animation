@@ -80,7 +80,9 @@ export function HoverInteractions() {
             <span className="text-3xl">🎨</span>
           </div>
           <div className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-transform duration-300 group-hover:translate-y-0">
-            <span className="text-sm font-medium text-white">View Details →</span>
+            <span className="text-sm font-medium text-white">
+              View Details →
+            </span>
           </div>
         </div>
       </AnimationCard>

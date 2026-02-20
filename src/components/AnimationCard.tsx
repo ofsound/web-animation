@@ -12,9 +12,15 @@ interface AnimationCardProps {
   onCopyResult?: (result: CopyResult, demoId: string) => void;
 }
 
-export function AnimationCard({ id, children, accent, onCopyResult }: AnimationCardProps) {
-  const [showCode, setShowCode] = useState(false);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+export function AnimationCard({
+  id,
+  children,
+  accent,
+  onCopyResult,
+}: AnimationCardProps) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
   const [replayKey, setReplayKey] = useState(0);
 
   const metadata = animationDemoMetaById.get(id);
@@ -43,7 +49,7 @@ export function AnimationCard({ id, children, accent, onCopyResult }: AnimationC
       className="group relative overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] shadow-[0_8px_28px_-20px_color-mix(in_oklab,var(--text-1)_55%,transparent)] transition-all duration-300 hover:border-[color-mix(in_oklab,var(--brand)_58%,var(--card-border))]"
       style={accent ? { boxShadow: `0 10px 30px -20px ${accent}` } : undefined}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 [background:radial-gradient(circle_at_100%_0%,color-mix(in_oklab,var(--brand)_18%,transparent),transparent_38%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 [background:radial-gradient(circle_at_100%_0%,color-mix(in_oklab,var(--brand)_18%,transparent),transparent_38%)] group-hover:opacity-100" />
 
       <div className="relative flex min-h-[210px] items-center justify-center p-7">
         <div key={`${id}-${replayKey}`}>{children}</div>
@@ -51,43 +57,32 @@ export function AnimationCard({ id, children, accent, onCopyResult }: AnimationC
 
       <div className="relative px-4 py-4">
         <div className="mb-2 flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold text-[var(--text-1)]">{title}</h3>
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => setReplayKey((value) => value + 1)}
-              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-              title="Replay animation"
-              aria-label={`Replay ${title} animation`}
-            >
-              Replay
-            </button>
-            <button
-              onClick={() => setShowCode((value) => !value)}
-              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-              aria-expanded={showCode}
-              aria-controls={`${id}-code-panel`}
-            >
-              {showCode ? "Hide" : "Code"}
-            </button>
-          </div>
+          <h3 className="text-sm font-semibold text-[var(--text-1)]">
+            {title}
+          </h3>
+          <button
+            onClick={() => setReplayKey((value) => value + 1)}
+            className="rounded-md border border-[var(--card-border)] bg-[var(--surface-3)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+            title="Replay animation"
+            aria-label={`Replay ${title} animation`}
+          >
+            Replay
+          </button>
         </div>
-        <p className="text-xs leading-relaxed text-[var(--text-2)]">{description}</p>
+        <p className="text-xs leading-relaxed text-[var(--text-2)]">
+          {description}
+        </p>
       </div>
 
       <div
         id={`${id}-code-panel`}
-        className={`grid transition-all duration-300 ${
-          showCode ? "grid-rows-[1fr] border-t border-[var(--card-border)]" : "grid-rows-[0fr]"
-        }`}
+        className="border-t border-[var(--card-border)]"
       >
         <div className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-[var(--card-border)] bg-[var(--surface-3)] px-4 py-2">
-            <span className="font-mono text-[10px] tracking-wider text-[var(--text-3)] uppercase">
-              JSX / Tailwind
-            </span>
+          <div className="flex items-center justify-end border-b border-[var(--card-border)] bg-[var(--surface-3)] px-4 py-2">
             <button
               onClick={handleCopy}
-              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              className="rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
               aria-label={`Copy code for ${title}`}
             >
               {copyState === "copied"
@@ -98,7 +93,9 @@ export function AnimationCard({ id, children, accent, onCopyResult }: AnimationC
             </button>
           </div>
           <pre className="code-block overflow-x-auto bg-[var(--surface-1)] p-4">
-            <code className="font-mono text-xs leading-relaxed text-[var(--text-2)]">{code}</code>
+            <code className="font-mono text-xs leading-relaxed text-[var(--text-2)]">
+              {code}
+            </code>
           </pre>
         </div>
       </div>

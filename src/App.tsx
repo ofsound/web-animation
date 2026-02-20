@@ -95,7 +95,11 @@ function App() {
             <h1 className="text-balance text-lg leading-tight font-black tracking-[-0.02em] text-[var(--text-1)] sm:text-xl">
               Tailwind Animation Editorial Gallery
             </h1>
-            <p className="mt-0.5 font-mono text-[11px] tracking-wide text-[var(--text-2)]">
+            <p
+              className="mt-0.5 font-mono text-[11px] tracking-wide text-[var(--text-2)]"
+              data-source-file="src/App.tsx"
+              data-source-line="98"
+            >
               50 demos · React 19 · Tailwind v4
             </p>
           </div>
