@@ -96,9 +96,13 @@ function App() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-6">
           <div>
             <h1 className="text-lg leading-tight font-black tracking-[-0.02em] text-balance text-[var(--text-1)] sm:text-xl">
-              Tailwind Animation Editorial Gallery
+              Tailwind Animation
             </h1>
-            <p className="mt-0.5 font-mono text-[11px] tracking-wide text-[var(--text-2)]">
+            <p
+              className="mt-0.5 font-mono text-[11px] tracking-wide text-[var(--text-2)]"
+              data-source-file="src/App.tsx"
+              data-source-line="98"
+            >
               Feb 2026 - Tailwind v4
             </p>
           </div>
@@ -119,7 +123,7 @@ function App() {
         onSelect={scrollToSection}
       />
 
-      <main className="relative mx-auto max-w-7xl px-5 pb-24 sm:px-6">
+      <main className="relative mx-auto max-w-7xl bg-[var(--surface-main)] px-5 pb-24 sm:px-6">
         <div className="space-y-7 pt-10 sm:space-y-10">
           {animationCategories.map((category, index) => {
             const SectionComponent = categoryComponents[category.id];

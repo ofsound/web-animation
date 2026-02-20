@@ -74,11 +74,11 @@ export function AnimationCard({
 
       <div
         id={`${id}-code-panel`}
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl border border-t-0 border-[var(--card-border)] bg-[var(--surface-3)] p-4 pt-9"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl bg-[var(--surface-3)] p-4 pt-9"
       >
         <button
           onClick={handleCopy}
-          className="absolute right-3 top-3 z-10 rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+          className="absolute top-3 right-3 z-10 rounded-md border border-[var(--card-border)] bg-[var(--surface-2)] px-2 py-1 font-mono text-[10px] text-[var(--text-2)] transition hover:border-[var(--brand)] hover:text-[var(--text-1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
           aria-label={`Copy code for ${title}`}
         >
           {copyState === "copied"

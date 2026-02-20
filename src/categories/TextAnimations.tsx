@@ -18,13 +18,13 @@ export function TextAnimations() {
       </AnimationCard>
 
       <AnimationCard id="text-shimmer">
-        <span className="animate-shimmer bg-[linear-gradient(110deg,#e2e8f0_0%,#94a3b8_35%,#e2e8f0_60%,#94a3b8_100%)] bg-[length:200%_100%] bg-clip-text text-3xl font-bold text-transparent">
+        <span className="animate-shimmer bg-[linear-gradient(110deg,var(--text-3)_0%,var(--text-2)_35%,var(--text-3)_60%,var(--text-2)_100%)] bg-[length:200%_100%] bg-clip-text text-3xl font-bold text-transparent">
           Shimmer Text
         </span>
       </AnimationCard>
 
       <AnimationCard id="text-stagger-letters">
-        <div className="flex text-3xl font-bold text-white/90">
+        <div className="flex text-3xl font-bold text-[var(--text-1)]">
           {"ANIMATE".split("").map((char, i) => (
             <span
               key={i}
@@ -44,16 +44,16 @@ export function TextAnimations() {
       <AnimationCard id="text-marquee">
         <div className="w-64 overflow-hidden">
           <div className="animate-marquee flex whitespace-nowrap">
-            <span className="mx-4 text-white/50">TAILWIND CSS v4 ✦</span>
-            <span className="mx-4 text-white/50">TAILWIND CSS v4 ✦</span>
-            <span className="mx-4 text-white/50">TAILWIND CSS v4 ✦</span>
-            <span className="mx-4 text-white/50">TAILWIND CSS v4 ✦</span>
+            <span className="mx-4 text-[var(--text-3)]">TAILWIND CSS v4 ✦</span>
+            <span className="mx-4 text-[var(--text-3)]">TAILWIND CSS v4 ✦</span>
+            <span className="mx-4 text-[var(--text-3)]">TAILWIND CSS v4 ✦</span>
+            <span className="mx-4 text-[var(--text-3)]">TAILWIND CSS v4 ✦</span>
           </div>
         </div>
       </AnimationCard>
 
       <AnimationCard id="text-word-stagger">
-        <p className="text-lg text-white/80">
+        <p className="text-lg text-[var(--text-2)]">
           {"Modern animations with Tailwind".split(" ").map((word, i) => (
             <span
               key={i}
@@ -73,13 +73,13 @@ export function TextAnimations() {
       </AnimationCard>
 
       <AnimationCard id="text-glitch">
-        <h2 className="relative [animation:glitch_0.3s_ease-in-out_infinite] text-3xl font-black text-white">
+        <h2 className="relative text-3xl font-black text-[var(--text-1)] [animation:glitch_0.3s_ease-in-out_infinite]">
           GLITCH
         </h2>
       </AnimationCard>
 
       <AnimationCard id="text-spacing-breathe">
-        <h2 className="cursor-pointer text-2xl font-bold tracking-tight text-white/80 transition-all duration-1000 hover:tracking-[0.3em]">
+        <h2 className="cursor-pointer text-2xl font-bold tracking-tight text-[var(--text-2)] transition-all duration-1000 hover:tracking-[0.3em]">
           BREATHE
         </h2>
       </AnimationCard>

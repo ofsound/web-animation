@@ -20,15 +20,15 @@ export function HoverInteractions() {
 
       <AnimationCard id="hover-3d-tilt">
         <div className="group [perspective:800px]">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 transition-transform duration-500 ease-out group-hover:[transform:rotateX(8deg)_rotateY(-8deg)]">
+          <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface-3)] p-6 transition-transform duration-500 ease-out group-hover:[transform:rotateX(8deg)_rotateY(-8deg)]">
             <div className="size-12 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400" />
-            <p className="mt-3 text-sm text-white/70">Hover for 3D tilt</p>
+            <p className="mt-3 text-sm text-[var(--text-2)]">Hover for 3D tilt</p>
           </div>
         </div>
       </AnimationCard>
 
       <AnimationCard id="hover-underline">
-        <a className="group relative cursor-pointer text-lg font-medium text-white/80">
+        <a className="group relative cursor-pointer text-lg font-medium text-[var(--text-2)]">
           Hover for underline
           <span className="bg-accent absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
         </a>
@@ -49,18 +49,18 @@ export function HoverInteractions() {
       </AnimationCard>
 
       <AnimationCard id="hover-icon-rotate">
-        <button className="group flex items-center gap-3 rounded-xl bg-white/5 px-5 py-3 transition-colors hover:bg-white/10">
+        <button className="group flex items-center gap-3 rounded-xl bg-[var(--surface-3)] px-5 py-3 transition-colors hover:bg-[var(--surface-2)]">
           <span className="text-xl transition-all duration-500 group-hover:rotate-[360deg] group-hover:text-amber-400">
             ⚙️
           </span>
-          <span className="text-sm text-white/70">Settings</span>
+          <span className="text-sm text-[var(--text-2)]">Settings</span>
         </button>
       </AnimationCard>
 
       <AnimationCard id="hover-glass">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:backdrop-blur-xl">
+        <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface-3)] p-6 backdrop-blur-md transition-all duration-300 hover:border-[var(--card-border)] hover:bg-[var(--surface-2)] hover:backdrop-blur-xl">
           <div className="mb-2 size-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500" />
-          <p className="text-sm text-white/70">Glass effect</p>
+          <p className="text-sm text-[var(--text-2)]">Glass effect</p>
         </div>
       </AnimationCard>
 
@@ -70,7 +70,7 @@ export function HoverInteractions() {
           id="ring-focus-demo"
           name="ring-focus-demo"
           placeholder="Click to focus..."
-          className="focus:border-accent focus:ring-accent/30 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition-all duration-300 outline-none placeholder:text-white/30 focus:shadow-[0_0_20px_oklch(0.7_0.18_270/0.15)] focus:ring-2"
+          className="focus:border-accent focus:ring-accent/30 rounded-xl border border-[var(--card-border)] bg-[var(--surface-3)] px-4 py-3 text-sm text-[var(--text-1)] outline-none transition-all duration-300 placeholder:text-[var(--text-3)] focus:shadow-[0_0_20px_oklch(0.7_0.18_270/0.15)] focus:ring-2"
         />
       </AnimationCard>
 

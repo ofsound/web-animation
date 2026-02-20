@@ -4,7 +4,7 @@ export function LoadingStates() {
   return (
     <>
       <AnimationCard id="loading-spinner">
-        <div className="border-t-accent size-10 animate-spin rounded-full border-4 border-white/10" />
+        <div className="border-t-accent size-10 animate-spin rounded-full border-4 border-[var(--card-border)]" />
       </AnimationCard>
 
       <AnimationCard id="loading-dual-ring">
@@ -24,14 +24,14 @@ export function LoadingStates() {
 
       <AnimationCard id="loading-skeleton">
         <div className="w-64 space-y-3">
-          <div className="animate-skeleton h-4 w-3/4 rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%]" />
-          <div className="animate-skeleton h-4 w-full rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] [animation-delay:100ms]" />
-          <div className="animate-skeleton h-4 w-1/2 rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] [animation-delay:200ms]" />
+          <div className="animate-skeleton h-4 w-3/4 rounded-lg bg-gradient-to-r from-[var(--card-border)] via-[var(--text-3)]/40 to-[var(--card-border)] bg-[length:200%_100%]" />
+          <div className="animate-skeleton h-4 w-full rounded-lg bg-gradient-to-r from-[var(--card-border)] via-[var(--text-3)]/40 to-[var(--card-border)] bg-[length:200%_100%] [animation-delay:100ms]" />
+          <div className="animate-skeleton h-4 w-1/2 rounded-lg bg-gradient-to-r from-[var(--card-border)] via-[var(--text-3)]/40 to-[var(--card-border)] bg-[length:200%_100%] [animation-delay:200ms]" />
         </div>
       </AnimationCard>
 
       <AnimationCard id="loading-progress">
-        <div className="h-2 w-64 overflow-hidden rounded-full bg-white/10">
+        <div className="h-2 w-64 overflow-hidden rounded-full bg-[var(--card-border)]">
           <div className="animate-progress from-accent to-cyan-glow h-full rounded-full bg-gradient-to-r" />
         </div>
       </AnimationCard>
@@ -56,14 +56,14 @@ export function LoadingStates() {
       </AnimationCard>
 
       <AnimationCard id="loading-bar">
-        <div className="h-1.5 w-64 overflow-hidden rounded-full bg-white/10">
+        <div className="h-1.5 w-64 overflow-hidden rounded-full bg-[var(--card-border)]">
           <div className="animate-shimmer via-accent h-full w-1/3 rounded-full bg-gradient-to-r from-transparent to-transparent bg-[length:200%_100%]" />
         </div>
       </AnimationCard>
 
       <AnimationCard id="loading-orbit">
         <div className="relative flex size-24 items-center justify-center">
-          <div className="size-2 rounded-full bg-white/20" />
+          <div className="size-2 rounded-full bg-[var(--text-3)]/50" />
           <div className="animate-orbit absolute">
             <div className="bg-accent size-3 rounded-full" />
           </div>

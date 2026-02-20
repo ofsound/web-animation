@@ -4,25 +4,25 @@ export function EntranceEffects() {
   return (
     <>
       <AnimationCard id="entrance-fade-in">
-        <div className="animate-fade-in rounded-xl bg-white/5 p-6 text-sm text-white/70">
+        <div className="animate-fade-in rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
           Fading in…
         </div>
       </AnimationCard>
 
       <AnimationCard id="entrance-fade-in-up">
-        <div className="animate-fade-in-up rounded-xl bg-white/5 p-6 text-sm text-white/70">
+        <div className="animate-fade-in-up rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
           Sliding up ↑
         </div>
       </AnimationCard>
 
       <AnimationCard id="entrance-fade-in-down">
-        <div className="animate-fade-in-down rounded-xl bg-white/5 p-6 text-sm text-white/70">
+        <div className="animate-fade-in-down rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
           Sliding down ↓
         </div>
       </AnimationCard>
 
       <AnimationCard id="entrance-scale-in">
-        <div className="animate-scale-in rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 p-6 text-sm font-medium text-white/80">
+        <div className="animate-scale-in rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 p-6 text-sm font-medium text-[var(--text-2)]">
           Pop! 🎉
         </div>
       </AnimationCard>
@@ -34,7 +34,7 @@ export function EntranceEffects() {
       </AnimationCard>
 
       <AnimationCard id="entrance-slide-bounce">
-        <div className="animate-slide-in-bounce rounded-xl bg-white/5 px-6 py-4 text-sm text-white/70">
+        <div className="animate-slide-in-bounce rounded-xl bg-[var(--surface-3)] px-6 py-4 text-sm text-[var(--text-2)]">
           ← Bounced in
         </div>
       </AnimationCard>
@@ -46,19 +46,19 @@ export function EntranceEffects() {
       </AnimationCard>
 
       <AnimationCard id="entrance-flip-x">
-        <div className="animate-flip-x rounded-xl bg-white/5 p-6 text-sm text-white/70">
+        <div className="animate-flip-x rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
           Flipped in (X axis)
         </div>
       </AnimationCard>
 
       <AnimationCard id="entrance-flip-y">
-        <div className="animate-flip-y rounded-xl bg-white/5 p-6 text-sm text-white/70">
+        <div className="animate-flip-y rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
           Flipped in (Y axis)
         </div>
       </AnimationCard>
 
       <AnimationCard id="entrance-blur-in">
-        <div className="animate-blur-in rounded-xl bg-white/5 p-6 text-sm text-white/70">
+        <div className="animate-blur-in rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
           Blurring into focus 🔍
         </div>
       </AnimationCard>
