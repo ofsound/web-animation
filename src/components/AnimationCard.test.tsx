@@ -1,6 +1,34 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { AnimationCard } from "./AnimationCard";
+
+vi.mock("@uiw/react-codemirror", () => ({
+  __esModule: true,
+  default: ({
+    id,
+    value,
+    onChange,
+    className,
+    "aria-labelledby": ariaLabelledBy,
+    "aria-describedby": ariaDescribedBy,
+  }: {
+    id?: string;
+    value?: string;
+    onChange?: (nextValue: string) => void;
+    className?: string;
+    "aria-labelledby"?: string;
+    "aria-describedby"?: string;
+  }) => (
+    <textarea
+      id={id}
+      value={value ?? ""}
+      onChange={(event) => onChange?.(event.target.value)}
+      className={className}
+      aria-labelledby={ariaLabelledBy}
+      aria-describedby={ariaDescribedBy}
+    />
+  ),
+}));
 
 const mockMetadata = {
   title: "Scale & Glow",
@@ -42,5 +70,38 @@ describe("AnimationCard", () => {
     });
 
     expect(screen.getByText("Edited")).toBeInTheDocument();
+  });
+
+  it("shows maximized prev/next controls and respects disabled states", () => {
+    const onGoPrev = vi.fn();
+    const onGoNext = vi.fn();
+
+    render(
+      <AnimationCard
+        id="hover-scale-glow"
+        metadata={mockMetadata}
+        isMaximized
+        canGoPrev={false}
+        canGoNext
+        onGoPrev={onGoPrev}
+        onGoNext={onGoNext}
+      >
+        <span>Preview</span>
+      </AnimationCard>,
+    );
+
+    const prevButton = screen.getByRole("button", {
+      name: /Show previous card before Scale & Glow/i,
+    });
+    const nextButton = screen.getByRole("button", {
+      name: /Show next card after Scale & Glow/i,
+    });
+
+    expect(prevButton).toBeDisabled();
+    expect(nextButton).toBeEnabled();
+
+    fireEvent.click(nextButton);
+    expect(onGoNext).toHaveBeenCalledTimes(1);
+    expect(onGoPrev).not.toHaveBeenCalled();
   });
 });

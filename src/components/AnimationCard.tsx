@@ -7,6 +7,10 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { css } from "@codemirror/lang-css";
+import { html } from "@codemirror/lang-html";
+import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
+import CodeMirror from "@uiw/react-codemirror";
 import type { DemoSource } from "../types/demo";
 
 type CopyResult = "success" | "error";
@@ -22,10 +26,15 @@ interface AnimationCardProps {
   id: string;
   metadata: DemoMetadata;
   children: ReactNode;
+  themeMode?: "light" | "dark";
   accent?: string;
   onCopyResult?: (result: CopyResult, demoId: string) => void;
   isMaximized?: boolean;
   onToggleMaximize?: () => void;
+  canGoPrev?: boolean;
+  canGoNext?: boolean;
+  onGoPrev?: () => void;
+  onGoNext?: () => void;
 }
 
 const VOID_TAGS = new Set([
@@ -197,10 +206,15 @@ export function AnimationCard({
   id,
   metadata,
   children,
+  themeMode = "dark",
   accent,
   onCopyResult,
   isMaximized = false,
   onToggleMaximize,
+  canGoPrev = false,
+  canGoNext = false,
+  onGoPrev,
+  onGoNext,
 }: AnimationCardProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
@@ -212,6 +226,9 @@ export function AnimationCard({
   const cardRef = useRef<HTMLElement>(null);
   const prevRectRef = useRef<DOMRect | null>(null);
   const [flipStyle, setFlipStyle] = useState<CSSProperties | null>(null);
+  const [placeholderHeight, setPlaceholderHeight] = useState<number | null>(
+    null,
+  );
   // Tracks the timer that drops the elevated z-index after the close transition
   const closeZTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -227,13 +244,26 @@ export function AnimationCard({
     // Works for both open (small card, no transform) and close (large fixed
     // card, getBoundingClientRect already accounts for the applied transform).
     if (cardRef.current) {
-      prevRectRef.current = cardRef.current.getBoundingClientRect();
+      const rect = cardRef.current.getBoundingClientRect();
+      prevRectRef.current = rect;
+      if (!isMaximized) {
+        setPlaceholderHeight(rect.height);
+      }
     }
     onToggleMaximize?.();
   };
 
   useLayoutEffect(() => {
-    if (!prevRectRef.current || !cardRef.current) return;
+    if (!prevRectRef.current || !cardRef.current) {
+      // Card can close via backdrop/Escape without going through the card button.
+      // In that case there is no FLIP origin rect; clear reserved slot on next frame.
+      if (!isMaximized && placeholderHeight !== null) {
+        requestAnimationFrame(() => {
+          setPlaceholderHeight(null);
+        });
+      }
+      return;
+    }
 
     const first = prevRectRef.current;
     const finalRect = cardRef.current.getBoundingClientRect();
@@ -246,32 +276,33 @@ export function AnimationCard({
         closeZTimerRef.current = null;
       }
 
-      // finalRect has NO transform yet (flipStyle is still null).
-      // CSS positions the card at `left: calc(50vw+…) top: 50%`; after
-      // translate(-50%,-50%) the visual center lands at (finalRect.left, finalRect.top).
-      const dx = first.left + first.width / 2 - finalRect.left;
-      const dy = first.top + first.height / 2 - finalRect.top;
+      // finalRect has no transform yet (flipStyle is still null).
+      // Compute center-to-center delta so the fixed card starts exactly at the
+      // minimized card's on-screen position.
+      const dx =
+        first.left + first.width / 2 - (finalRect.left + finalRect.width / 2);
+      const dy =
+        first.top + first.height / 2 - (finalRect.top + finalRect.height / 2);
       const scaleX = first.width / finalRect.width;
       const scaleY = first.height / finalRect.height;
 
       // Jump instantly to the small-card position (suppress transition)
       setFlipStyle({
         transition: "none",
-        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${scaleX}, ${scaleY})`,
+        transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`,
       });
 
       // Two rAFs guarantee the suppressed frame is committed before animating
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          setFlipStyle({ transform: "translate(-50%, -50%)" });
+          setFlipStyle({ transform: "none" });
           prevRectRef.current = null;
         });
       });
     } else {
       // ── CLOSE: large → small ────────────────────────────────────────────
-      // first = maximized card's visual rect (getBoundingClientRect includes the
-      // translate(-50%,-50%) transform, so it's the true on-screen position).
-      // finalRect = small card back in grid flow (no transform).
+      // first = maximized card's visual rect.
+      // finalRect = small card back in grid flow.
       const dx =
         first.left + first.width / 2 - (finalRect.left + finalRect.width / 2);
       const dy =
@@ -289,7 +320,7 @@ export function AnimationCard({
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          // Release the transform — Tailwind `transition-all duration-300` animates
+          // Release the transform — Tailwind `transition-transform duration-300` animates
           // back to identity. Keep z-index elevated for the full 300 ms duration.
           setFlipStyle({ zIndex: 130 });
           prevRectRef.current = null;
@@ -297,12 +328,13 @@ export function AnimationCard({
           // Drop elevated z-index only after the transition has finished.
           closeZTimerRef.current = setTimeout(() => {
             setFlipStyle(null);
+            setPlaceholderHeight(null);
             closeZTimerRef.current = null;
           }, 320);
         });
       });
     }
-  }, [isMaximized]);
+  }, [isMaximized, placeholderHeight]);
   const iconSize = isMaximized ? "size-4" : "size-3.5";
 
   const { title, description, source = "tailwind" } = metadata;
@@ -316,6 +348,14 @@ export function AnimationCard({
     () => (source === "css" ? toScopedLiveCss(liveCode, id) : ""),
     [id, liveCode, source],
   );
+  const editorExtensions = useMemo(
+    () =>
+      source === "css"
+        ? [css()]
+        : [html({ autoCloseTags: true, matchClosingTags: true })],
+    [source],
+  );
+  const editorTheme = themeMode === "dark" ? githubDark : githubLight;
 
   const handleCopy = async () => {
     try {
@@ -329,21 +369,55 @@ export function AnimationCard({
 
     setTimeout(() => setCopyState("idle"), 1800);
   };
+  const slotStyle: CSSProperties | undefined =
+    isMaximized && placeholderHeight !== null
+      ? { minHeight: `${placeholderHeight}px` }
+      : undefined;
 
   return (
-    <article
-      ref={cardRef}
-      id={id}
-      className={`group flex flex-col overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-surface-card)] transition-all duration-300 ${
-        isMaximized
-          ? "fixed top-1/2 left-[calc(50vw+2.5rem)] z-[120] h-[min(700px,calc(100dvh-1rem))] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-[calc(50vw+9rem)] sm:h-[min(700px,calc(100dvh-2rem))] sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
-          : "relative rounded-2xl"
-      }`}
-      style={{
-        ...(accent ? { boxShadow: `0 10px 30px -20px ${accent}` } : {}),
-        ...(flipStyle ?? {}),
-      }}
-    >
+    <div style={slotStyle}>
+      <article
+        ref={cardRef}
+        id={id}
+        className={`group flex flex-col overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-surface-card)] transition-transform duration-300 ${
+          isMaximized
+            ? "fixed inset-y-0 right-0 left-20 z-[120] m-auto h-[min(700px,calc(100dvh-1rem))] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-72 sm:h-[min(700px,calc(100dvh-2rem))] sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
+            : "relative rounded-2xl"
+        }`}
+        style={{
+          ...(accent ? { boxShadow: `0 10px 30px -20px ${accent}` } : {}),
+          ...(flipStyle ?? {}),
+        }}
+      >
+      {isMaximized && (onGoPrev || onGoNext) ? (
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
+          <button
+            onClick={onGoPrev}
+            disabled={!canGoPrev || !onGoPrev}
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-[var(--color-surface-card-action)] px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-45`}
+            title="Go to previous card"
+            aria-label={`Show previous card before ${title}`}
+          >
+            <span className="font-mono">Prev</span>
+            <span aria-hidden className="font-mono text-[10px]">
+              ← ↑
+            </span>
+          </button>
+          <button
+            onClick={onGoNext}
+            disabled={!canGoNext || !onGoNext}
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-[var(--color-surface-card-action)] px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-45`}
+            title="Go to next card"
+            aria-label={`Show next card after ${title}`}
+          >
+            <span className="font-mono">Next</span>
+            <span aria-hidden className="font-mono text-[10px]">
+              ↓ →
+            </span>
+          </button>
+        </div>
+      ) : null}
+
       {onToggleMaximize ? (
         <button
           onClick={handleToggleMaximize}
@@ -369,7 +443,7 @@ export function AnimationCard({
       ) : null}
 
       <div
-        className={`relative flex items-center justify-center ${
+        className={`relative flex items-center justify-center bg-[var(--color-demo-preview-bg)] ${
           isMaximized
             ? "min-h-[200px] p-5 sm:min-h-[220px] sm:p-6"
             : "min-h-[210px] p-7"
@@ -412,14 +486,14 @@ export function AnimationCard({
       </div>
 
       <div
-        className={`relative bg-[var(--color-surface-card-subtle)] ${isMaximized ? "px-6 py-5" : "px-4 py-4"}`}
+        className={`relative bg-gradient-to-b from-[var(--color-surface-card-header-start)] to-[var(--color-surface-card-subtle)] ${isMaximized ? "px-6 py-5" : "px-4 pt-2"}`}
       >
-        <div className="mb-2">
+        <div className="mb-1.5">
           <h3
             className={
               isMaximized
                 ? "text-xl font-semibold text-[var(--color-text-primary)]"
-                : "text-sm font-semibold text-[var(--color-text-primary)]"
+                : "text-base font-semibold text-[var(--color-text-primary)]"
             }
           >
             {title}
@@ -438,8 +512,10 @@ export function AnimationCard({
 
       <div
         id={`${id}-code-panel`}
-        className={`code-panel relative flex min-h-0 flex-1 flex-col overflow-hidden border-t border-[var(--color-border-subtle)] ${
-          isMaximized ? "rounded-b-3xl p-6 pt-12" : "rounded-b-2xl p-4 pt-9"
+        className={`code-panel relative mt-3 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden ${
+          isMaximized
+            ? "rounded-b-3xl p-6 pt-12"
+            : "max-h-[5rem] rounded-b-2xl px-4"
         }`}
         style={{
           background:
@@ -463,7 +539,7 @@ export function AnimationCard({
             onClick={handleCopy}
             className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-[var(--color-button-neutral-bg)] text-[var(--color-button-neutral-fg)] ${
               isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
-            } ${copyState === "copied" ? "border-emerald-500/50! text-emerald-400!" : copyState === "failed" ? "border-red-500/50! text-red-400!" : ""}`}
+            } ${copyState === "copied" ? "border-[var(--color-status-success)]/50! text-[var(--color-status-success)]!" : copyState === "failed" ? "border-[var(--color-status-error)]/50! text-[var(--color-status-error)]!" : ""}`}
             title={
               copyState === "copied"
                 ? "Copied!"
@@ -491,20 +567,34 @@ export function AnimationCard({
             )}
           </button>
         </div>
-        <label htmlFor={`${id}-code-editor`} className="sr-only">
+        <label id={`${id}-code-editor-label`} className="sr-only">
           Live code editor for {title}
         </label>
-        <textarea
-          id={`${id}-code-editor`}
-          rows={isMaximized ? 16 : 3}
-          value={liveCode}
-          onChange={(event) => setLiveCode(event.target.value)}
-          spellCheck={false}
-          className={`code-block code-editor w-full flex-1 resize-y overflow-auto bg-transparent pr-1 font-mono leading-relaxed text-[var(--color-text-tertiary)] focus-visible:outline-none ${
-            isMaximized ? "min-h-[14rem] text-sm" : "min-h-[6.5rem] text-[10px]"
+        <div
+          className={`rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-code)] shadow-inner focus-within:border-[var(--color-accent-brand)] focus-within:ring-1 focus-within:ring-[var(--color-accent-brand)] ${
+            isMaximized ? "p-3" : "p-2"
           }`}
-          aria-describedby={`${id}-code-hint`}
-        />
+        >
+          <CodeMirror
+            id={`${id}-code-editor`}
+            value={liveCode}
+            onChange={(value) => setLiveCode(value)}
+            extensions={editorExtensions}
+            theme={editorTheme}
+            basicSetup={{
+              foldGutter: false,
+              lineNumbers: isMaximized,
+              highlightActiveLineGutter: false,
+            }}
+            height={isMaximized ? "22rem" : "4.25rem"}
+            maxHeight={isMaximized ? "22rem" : "4.25rem"}
+            className={`code-block code-editor min-h-0 w-full flex-1 overflow-auto bg-transparent pr-1 font-mono leading-relaxed text-[var(--color-text-tertiary)] focus-visible:outline-none ${
+              isMaximized ? "text-sm" : "text-[10px]"
+            }`}
+            aria-labelledby={`${id}-code-editor-label`}
+            aria-describedby={`${id}-code-hint`}
+          />
+        </div>
       </div>
 
       <span className="sr-only" aria-live="polite">
@@ -514,6 +604,7 @@ export function AnimationCard({
             ? `Failed to copy ${title} code.`
             : ""}
       </span>
-    </article>
+      </article>
+    </div>
   );
 }

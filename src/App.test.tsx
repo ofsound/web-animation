@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -121,5 +121,56 @@ describe("App hash navigation", () => {
 
     expect(scrollToMock).toHaveBeenCalled();
     expect(scrollIntoViewMock).not.toHaveBeenCalled();
+  });
+
+  it("navigates maximized cards with all arrow keys", async () => {
+    renderApp();
+    flushRafFrames(2);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Expand Scale & Glow/i }),
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: /Exit expanded view for Scale & Glow/i,
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /Exit expanded view for Gradient Border Spin/i,
+        }),
+      ).toBeInTheDocument(),
+    );
+
+    fireEvent.keyDown(window, { key: "ArrowDown" });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /Exit expanded view for 3D Tilt Card/i,
+        }),
+      ).toBeInTheDocument(),
+    );
+
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /Exit expanded view for Gradient Border Spin/i,
+        }),
+      ).toBeInTheDocument(),
+    );
+
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /Exit expanded view for Scale & Glow/i,
+        }),
+      ).toBeInTheDocument(),
+    );
   });
 });

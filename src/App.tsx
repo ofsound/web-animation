@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { AnimationCard } from "./components/AnimationCard";
 import { CategoryIcon } from "./components/CategoryIcon";
 import { CategorySection } from "./components/CategorySection";
@@ -16,6 +17,23 @@ const MAX_DEMO_LOOKUP_FRAMES = 45;
 const MIN_SECTION_SCROLL_DURATION_MS = 300;
 const MAX_SECTION_SCROLL_DURATION_MS = 1400;
 const SECTION_SCROLL_MS_PER_PIXEL = 0.4;
+const PROGRAMMATIC_SCROLL_CLASS = "is-programmatic-scrolling";
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName;
+  if (
+    tagName === "INPUT" ||
+    tagName === "TEXTAREA" ||
+    tagName === "SELECT"
+  ) {
+    return true;
+  }
+
+  return target.closest('[contenteditable="true"], [role="textbox"]') !== null;
+}
 
 type GalleryDataView = {
   categories: Category[];
@@ -30,6 +48,7 @@ function App() {
   const { theme, toggleTheme } = useTheme();
   const activeNavigationTokenRef = useRef(0);
   const scrollAnimationFrameRef = useRef<number | null>(null);
+  const [isProgrammaticScrolling, setIsProgrammaticScrolling] = useState(false);
 
   const galleryDataByMode = useMemo<Record<GalleryMode, GalleryDataView>>(
     () => ({
@@ -46,9 +65,45 @@ function App() {
     maximizedDemoId && demoCategoryById.has(maximizedDemoId)
       ? maximizedDemoId
       : null;
+  const orderedDemoIds = useMemo(
+    () =>
+      categories.flatMap((category) =>
+        (demosByCategory.get(category.id) ?? []).map((demo) => demo.id),
+      ),
+    [categories, demosByCategory],
+  );
+  const activeMaximizedDemoIndex = useMemo(
+    () =>
+      activeMaximizedDemoId ? orderedDemoIds.indexOf(activeMaximizedDemoId) : -1,
+    [activeMaximizedDemoId, orderedDemoIds],
+  );
+  const canMaximizedDemoGoPrev = activeMaximizedDemoIndex > 0;
+  const canMaximizedDemoGoNext =
+    activeMaximizedDemoIndex !== -1 &&
+    activeMaximizedDemoIndex < orderedDemoIds.length - 1;
   const closeMaximizedDemo = useCallback(() => {
     setMaximizedDemoId(null);
   }, []);
+  const navigateMaximizedDemo = useCallback(
+    (direction: "prev" | "next") => {
+      setMaximizedDemoId((activeId) => {
+        if (!activeId) return activeId;
+
+        const activeIndex = orderedDemoIds.indexOf(activeId);
+        if (activeIndex === -1) return null;
+
+        const nextIndex =
+          direction === "prev" ? activeIndex - 1 : activeIndex + 1;
+
+        if (nextIndex < 0 || nextIndex >= orderedDemoIds.length) {
+          return activeId;
+        }
+
+        return orderedDemoIds[nextIndex] ?? activeId;
+      });
+    },
+    [orderedDemoIds],
+  );
 
   const sectionIds = useMemo(
     () => categories.map((category) => category.id),
@@ -60,6 +115,41 @@ function App() {
     if (typeof window === "undefined") return true;
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
+  const setGalleryModeWithTransition = useCallback(
+    (mode: GalleryMode) => {
+      if (mode === galleryMode) return;
+
+      const applyModeChange = (commitSynchronously = false) => {
+        if (commitSynchronously) {
+          flushSync(() => {
+            closeMaximizedDemo();
+            setGalleryMode(mode);
+          });
+          return;
+        }
+
+        closeMaximizedDemo();
+        setGalleryMode(mode);
+      };
+
+      if (
+        prefersReducedMotion() ||
+        typeof document.startViewTransition !== "function"
+      ) {
+        applyModeChange();
+        return;
+      }
+
+      try {
+        document.startViewTransition(() => {
+          applyModeChange(true);
+        });
+      } catch {
+        applyModeChange();
+      }
+    },
+    [closeMaximizedDemo, galleryMode, prefersReducedMotion],
+  );
 
   const getNativeScrollBehavior = useCallback(() => {
     return prefersReducedMotion() ? "auto" : "smooth";
@@ -70,6 +160,7 @@ function App() {
       window.cancelAnimationFrame(scrollAnimationFrameRef.current);
       scrollAnimationFrameRef.current = null;
     }
+    setIsProgrammaticScrolling(false);
   }, []);
 
   const scrollSectionToTarget = useCallback(
@@ -108,6 +199,8 @@ function App() {
         ),
       );
 
+      setIsProgrammaticScrolling(true);
+
       let startTime: number | null = null;
       const easeInOutCubic = (value: number) =>
         value < 0.5
@@ -134,6 +227,7 @@ function App() {
         }
 
         scrollAnimationFrameRef.current = null;
+        setIsProgrammaticScrolling(false);
       };
 
       scrollAnimationFrameRef.current = window.requestAnimationFrame(animate);
@@ -272,8 +366,18 @@ function App() {
   ]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    if (isProgrammaticScrolling) {
+      root.classList.add(PROGRAMMATIC_SCROLL_CLASS);
+      return;
+    }
+    root.classList.remove(PROGRAMMATIC_SCROLL_CLASS);
+  }, [isProgrammaticScrolling]);
+
+  useEffect(() => {
     return () => {
       cancelSectionScrollAnimation();
+      document.documentElement.classList.remove(PROGRAMMATIC_SCROLL_CLASS);
     };
   }, [cancelSectionScrollAnimation]);
 
@@ -283,12 +387,32 @@ function App() {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMaximizedDemoId(null);
+        return;
+      }
+      if (isEditableKeyboardTarget(event.target)) {
+        return;
+      }
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        if (!canMaximizedDemoGoPrev) return;
+        event.preventDefault();
+        navigateMaximizedDemo("prev");
+        return;
+      }
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        if (!canMaximizedDemoGoNext) return;
+        event.preventDefault();
+        navigateMaximizedDemo("next");
       }
     };
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [activeMaximizedDemoId]);
+  }, [
+    activeMaximizedDemoId,
+    canMaximizedDemoGoNext,
+    canMaximizedDemoGoPrev,
+    navigateMaximizedDemo,
+  ]);
 
   return (
     <div className="min-h-screen text-[var(--color-text-primary)]">
@@ -329,8 +453,7 @@ function App() {
                 role="radio"
                 aria-checked={galleryMode === mode}
                 onClick={() => {
-                  closeMaximizedDemo();
-                  setGalleryMode(mode);
+                  setGalleryModeWithTransition(mode);
                 }}
                 className={`relative z-10 flex-1 rounded-full py-1.5 text-center text-[11px] font-black tracking-widest uppercase transition-colors duration-200 ${
                   galleryMode === mode
@@ -394,53 +517,55 @@ function App() {
         </div>
       </aside>
 
-      {/* Glassmorphic backdrop — sits below the maximized card (z-119) */}
       {activeMaximizedDemoId && (
         <div
-          className="fixed inset-0 z-[119] backdrop-blur-md"
+          className="fixed inset-y-0 left-20 right-0 z-[110] backdrop-blur-md sm:left-72"
           style={{
             background:
-              "color-mix(in oklab, var(--color-app-bg) 45%, transparent)",
+              "color-mix(in oklab, var(--color-app-bg) 56%, transparent)",
           }}
           onClick={closeMaximizedDemo}
           aria-hidden="true"
         />
       )}
 
-      <main className="relative ml-20 bg-[var(--color-app-main)] px-4 pt-7 pb-24 sm:ml-72 sm:px-7 sm:pt-10 lg:px-10 2xl:px-14">
-        <div className="mx-auto w-full max-w-[1600px] space-y-10 sm:space-y-14">
+      <main className="relative ml-20 bg-[var(--color-app-main)] pt-7 pb-24 sm:ml-72 sm:pt-10">
+        <div className={activeMaximizedDemoId ? "" : "mode-gallery-content"}>
           {categories.map((category, index) => {
             const demos = demosByCategory.get(category.id) ?? [];
             return (
-              <div key={category.id} className="contents">
-                {index > 0 && (
-                  <div className="flex items-center py-5 sm:py-7" aria-hidden>
-                    <div className="h-px w-full bg-[var(--color-divider)]" />
-                  </div>
-                )}
-                <CategorySection category={category} eager={index === 0}>
-                  {demos.map((demo) => (
-                    <AnimationCard
-                      key={demo.id}
-                      id={demo.id}
-                      metadata={{
-                        title: demo.title,
-                        description: demo.description,
-                        code: demo.code,
-                        source: demo.source,
-                      }}
-                      isMaximized={activeMaximizedDemoId === demo.id}
-                      onToggleMaximize={() =>
-                        setMaximizedDemoId((activeId) =>
-                          activeId === demo.id ? null : demo.id,
-                        )
-                      }
-                    >
-                      <demo.Component />
-                    </AnimationCard>
-                  ))}
-                </CategorySection>
-              </div>
+              <CategorySection
+                key={category.id}
+                category={category}
+                eager={index === 0}
+                surfaceTone={index % 2 === 0 ? "odd" : "even"}
+              >
+                {demos.map((demo) => (
+                  <AnimationCard
+                    key={demo.id}
+                    id={demo.id}
+                    themeMode={theme}
+                    metadata={{
+                      title: demo.title,
+                      description: demo.description,
+                      code: demo.code,
+                      source: demo.source,
+                    }}
+                    isMaximized={activeMaximizedDemoId === demo.id}
+                    onToggleMaximize={() =>
+                      setMaximizedDemoId((activeId) =>
+                        activeId === demo.id ? null : demo.id,
+                      )
+                    }
+                    canGoPrev={canMaximizedDemoGoPrev}
+                    canGoNext={canMaximizedDemoGoNext}
+                    onGoPrev={() => navigateMaximizedDemo("prev")}
+                    onGoNext={() => navigateMaximizedDemo("next")}
+                  >
+                    <demo.Component />
+                  </AnimationCard>
+                ))}
+              </CategorySection>
             );
           })}
         </div>

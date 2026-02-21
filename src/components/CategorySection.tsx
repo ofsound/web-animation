@@ -8,18 +8,24 @@ interface SectionCategory {
 interface CategorySectionProps {
   category: SectionCategory;
   eager?: boolean;
+  surfaceTone?: "odd" | "even";
   children: ReactNode;
 }
 
 export function CategorySection({
   category,
   eager = false,
+  surfaceTone = "odd",
   children,
 }: CategorySectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isLoaded, setIsLoaded] = useState(eager);
+  const sectionSurfaceClass =
+    surfaceTone === "even"
+      ? "bg-[var(--color-surface-section-even)]"
+      : "bg-[var(--color-surface-section-odd)]";
   const cardGridStyle = {
-    gridTemplateColumns: "repeat(auto-fit, minmax(0, 480px))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(0, 400px))",
     justifyContent: "center",
   } as const;
 
@@ -50,22 +56,24 @@ export function CategorySection({
       id={category.id}
       ref={sectionRef}
       aria-label={category.label}
-      className="scroll-mt-8 p-5 pt-8 sm:p-7 sm:pt-9"
+      className={`scroll-mt-8 py-8 sm:py-10 ${sectionSurfaceClass}`}
     >
-      {isLoaded ? (
-        <div className="grid gap-7" style={cardGridStyle}>
-          {children}
-        </div>
-      ) : (
-        <div className="grid gap-4" style={cardGridStyle} aria-hidden>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={`${category.id}-placeholder-${index}`}
-              className="h-[280px] rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-card-subtle)]"
-            />
-          ))}
-        </div>
-      )}
+      <div className="mx-auto w-full max-w-[1600px] px-5 sm:px-7 lg:px-10 2xl:px-14">
+        {isLoaded ? (
+          <div className="grid gap-7" style={cardGridStyle}>
+            {children}
+          </div>
+        ) : (
+          <div className="grid gap-4" style={cardGridStyle} aria-hidden>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={`${category.id}-placeholder-${index}`}
+                className="h-[280px] rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-card-subtle)]"
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
