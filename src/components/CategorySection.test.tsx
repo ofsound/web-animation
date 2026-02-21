@@ -11,20 +11,21 @@ const mockCategory: Category = {
 };
 
 describe("CategorySection", () => {
-  it("renders category header with label and count", () => {
+  it("exposes an accessible region label for the category", () => {
     render(
-      <CategorySection category={mockCategory} count={10} eager>
+      <CategorySection category={mockCategory} eager>
         <span>Demo content</span>
       </CategorySection>,
     );
 
-    expect(screen.getByRole("heading", { name: /Hover & Interaction/i })).toBeInTheDocument();
-    expect(screen.getByText("10 demos")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: /Hover & Interaction/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders children when eager", () => {
     render(
-      <CategorySection category={mockCategory} count={5} eager>
+      <CategorySection category={mockCategory} eager>
         <span data-testid="demo-content">Demo content</span>
       </CategorySection>,
     );

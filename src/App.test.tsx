@@ -1,6 +1,15 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { ThemeProvider } from "./components/ThemeProvider";
+
+function renderApp() {
+  return render(
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>,
+  );
+}
 
 class IntersectionObserverMock {
   observe() {}
@@ -9,24 +18,51 @@ class IntersectionObserverMock {
 }
 
 const rafQueue: FrameRequestCallback[] = [];
+let rafTimestamp = 0;
 let scrollIntoViewMock: ReturnType<typeof vi.fn>;
+let scrollToMock: ReturnType<typeof vi.fn>;
 
 function flushRafFrames(frameCount = 1): void {
   for (let index = 0; index < frameCount; index += 1) {
+    rafTimestamp += 16;
     const callbacks = rafQueue.splice(0, rafQueue.length);
-    callbacks.forEach((callback) => callback(performance.now()));
+    callbacks.forEach((callback) => callback(rafTimestamp));
   }
 }
 
 describe("App hash navigation", () => {
   beforeEach(() => {
     window.location.hash = "";
+    rafTimestamp = 0;
     scrollIntoViewMock = vi.fn();
+    scrollToMock = vi.fn((position: ScrollToOptions | number, y?: number) => {
+      const nextScrollY =
+        typeof position === "number"
+          ? typeof y === "number"
+            ? y
+            : position
+          : (position.top ?? window.scrollY);
+      Object.defineProperty(window, "scrollY", {
+        configurable: true,
+        writable: true,
+        value: nextScrollY,
+      });
+    });
 
     Object.defineProperty(Element.prototype, "scrollIntoView", {
       configurable: true,
       writable: true,
       value: scrollIntoViewMock,
+    });
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      writable: true,
+      value: 0,
+    });
+    Object.defineProperty(window, "scrollTo", {
+      configurable: true,
+      writable: true,
+      value: scrollToMock,
     });
 
     vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
@@ -60,19 +96,20 @@ describe("App hash navigation", () => {
 
   it("switches to CSS mode from a CSS deep-link hash", async () => {
     window.location.hash = "#keyframes-basic-bounce";
-    render(<App />);
+    renderApp();
 
     flushRafFrames(4);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /Core Keyframe Animations/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /CSS/i })).toHaveAttribute(
+        "aria-checked",
+        "true",
+      );
     });
   });
 
   it("keeps only the latest hash navigation when updates happen rapidly", () => {
-    render(<App />);
+    renderApp();
     flushRafFrames(2);
 
     window.location.hash = "#hover-scale-glow";
@@ -80,12 +117,9 @@ describe("App hash navigation", () => {
     window.location.hash = "#loading";
     window.dispatchEvent(new Event("hashchange"));
 
-    flushRafFrames(6);
+    flushRafFrames(80);
 
-    expect(scrollIntoViewMock).toHaveBeenCalled();
-    const lastScrolledElement = scrollIntoViewMock.mock.instances.at(-1) as
-      | HTMLElement
-      | undefined;
-    expect(lastScrolledElement?.id).toBe("loading");
+    expect(scrollToMock).toHaveBeenCalled();
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
   });
 });

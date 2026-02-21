@@ -7,19 +7,21 @@ interface SectionCategory {
 
 interface CategorySectionProps {
   category: SectionCategory;
-  count: number;
   eager?: boolean;
   children: ReactNode;
 }
 
 export function CategorySection({
   category,
-  count,
   eager = false,
   children,
 }: CategorySectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isLoaded, setIsLoaded] = useState(eager);
+  const cardGridStyle = {
+    gridTemplateColumns: "repeat(auto-fit, minmax(0, 480px))",
+    justifyContent: "center",
+  } as const;
 
   useEffect(() => {
     if (isLoaded || !sectionRef.current) return;
@@ -47,33 +49,19 @@ export function CategorySection({
     <section
       id={category.id}
       ref={sectionRef}
-      aria-labelledby={`${category.id}-heading`}
+      aria-label={category.label}
       className="scroll-mt-8 p-5 pt-8 sm:p-7 sm:pt-9"
     >
-      <header className="mb-7">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h2
-            id={`${category.id}-heading`}
-            className="text-2xl font-bold text-[var(--text-1)] sm:text-2xl"
-          >
-            {category.label}
-          </h2>
-          <span className="font-mono text-sm text-[var(--text-3)]">
-            {count} {count === 1 ? "demo" : "demos"}
-          </span>
-        </div>
-      </header>
-
       {isLoaded ? (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-7" style={cardGridStyle}>
           {children}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-hidden>
+        <div className="grid gap-4" style={cardGridStyle} aria-hidden>
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={`${category.id}-placeholder-${index}`}
-              className="h-[280px] rounded-2xl border border-[var(--card-border)] bg-[var(--surface-3)]"
+              className="h-[280px] rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-card-subtle)]"
             />
           ))}
         </div>

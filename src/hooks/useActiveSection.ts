@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export function useActiveSection(sectionIds: string[]) {
-  const [activeSection, setActiveSection] = useState(sectionIds[0] ?? "");
+  const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
     if (sectionIds.length === 0) return;
@@ -11,21 +11,43 @@ export function useActiveSection(sectionIds: string[]) {
       .filter((node): node is HTMLElement => node instanceof HTMLElement);
 
     if (sections.length === 0) return;
+    const observedEntries = new Map<string, IntersectionObserverEntry>();
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        entries.forEach((entry) => {
+          observedEntries.set(entry.target.id, entry);
+        });
 
-        if (visible[0]?.target.id) {
-          setActiveSection(visible[0].target.id);
+        const visible = Array.from(observedEntries.values()).filter(
+          (entry) => entry.isIntersecting,
+        );
+        if (visible.length === 0) return;
+
+        const rootBounds = visible[0]?.rootBounds;
+        const anchorLine =
+          rootBounds?.top !== undefined && rootBounds?.height !== undefined
+            ? rootBounds.top + rootBounds.height * 0.35
+            : window.innerHeight * 0.35;
+
+        const [nextActive] = visible.sort((a, b) => {
+          const distanceA = Math.abs(a.boundingClientRect.top - anchorLine);
+          const distanceB = Math.abs(b.boundingClientRect.top - anchorLine);
+
+          if (distanceA !== distanceB) {
+            return distanceA - distanceB;
+          }
+          return b.intersectionRatio - a.intersectionRatio;
+        });
+
+        if (nextActive?.target.id) {
+          setActiveSection(nextActive.target.id);
         }
       },
       {
         root: null,
-        rootMargin: "-35% 0px -50% 0px",
-        threshold: [0.15, 0.35, 0.55, 0.75],
+        rootMargin: "-25% 0px -55% 0px",
+        threshold: [0, 0.1, 0.25, 0.5, 0.75],
       },
     );
 
@@ -34,5 +56,5 @@ export function useActiveSection(sectionIds: string[]) {
     return () => observer.disconnect();
   }, [sectionIds]);
 
-  return activeSection;
+  return activeSection || sectionIds[0] || "";
 }
