@@ -1,0 +1,54 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  padding: 10px 16px;
+}
+
+@property --hue {
+  syntax: '<number>';
+  inherits: true;     /* children inherit the animated hue */
+  initial-value: 260;
+}
+
+/* Animate hue on the root — all children see it */
+.root {
+  width: 100%;
+  display: contents;
+  animation: cycleHue 6s linear infinite;
+}
+
+@keyframes cycleHue {
+  from { --hue: 260; }
+  to   { --hue: 620; } /* 260 + 360 = full lap */
+}
+
+.swatch {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  background: oklch(60% .25 var(--hue));
+}
+.swatchMuted {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  background: oklch(40% .15 calc(var(--hue) + 30));
+}
+.swatchLight {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  background: oklch(80% .18 calc(var(--hue) - 30));
+}
+
+.note {
+  font-size: 10px;
+  color: #7a8db8;
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}

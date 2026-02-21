@@ -1,0 +1,68 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  padding: 16px;
+}
+
+@property --grad-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 135deg;
+}
+
+.big {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  background: linear-gradient(
+    var(--grad-angle),
+    oklch(72% .28 260),
+    oklch(72% .28 320),
+    oklch(72% .28 30),
+    oklch(72% .28 80)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: rotateGrad 4s linear infinite;
+}
+
+@keyframes rotateGrad {
+  to { --grad-angle: 495deg; }
+}
+
+.medium {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg,
+    oklch(70% .28 160) 0%,
+    oklch(70% .28 200) 50%,
+    oklch(70% .28 160) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer 2.5s linear infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% center; }
+  to   { background-position:   0% center; }
+}
+
+.sub {
+  font-size: 10px;
+  color: #4a5e8a;
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}

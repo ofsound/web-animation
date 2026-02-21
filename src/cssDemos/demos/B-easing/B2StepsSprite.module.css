@@ -1,0 +1,50 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  height: 200px;
+}
+
+.strip {
+  display: flex;
+  gap: 0;
+  /* Sprite strip: 8 × 56px wide = 448px total */
+  width: 56px;
+  overflow: hidden;
+  font-size: 40px;
+  line-height: 56px;
+  height: 56px;
+  border-radius: 8px;
+  border: 1px solid #1e2a46;
+  background: #10172a;
+}
+
+.frames {
+  display: flex;
+  width: 448px;  /* 8 frames × 56px */
+  animation: flipbook 1s steps(8, end) infinite;
+  will-change: transform;
+}
+
+.frame {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  font-size: 36px;
+  flex-shrink: 0;
+}
+
+.info {
+  font-size: 11px;
+  color: #8aa0df;
+  font-family: var(--font-mono);
+}
+
+@keyframes flipbook {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-448px); }
+}

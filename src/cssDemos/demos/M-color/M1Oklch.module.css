@@ -1,0 +1,67 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  height: 210px;
+  padding: 10px 14px;
+  justify-content: center;
+}
+
+.label {
+  font-size: 9px;
+  color: #4a5e8a;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.strip {
+  height: 22px;
+  border-radius: 6px;
+}
+
+/* HSL hue sweep — brightness varies across the spectrum */
+.hslStrip {
+  background: linear-gradient(90deg,
+    hsl(0,   80%, 55%),
+    hsl(60,  80%, 55%),
+    hsl(120, 80%, 55%),
+    hsl(180, 80%, 55%),
+    hsl(240, 80%, 55%),
+    hsl(300, 80%, 55%),
+    hsl(360, 80%, 55%)
+  );
+}
+
+/* OKLCH hue sweep — perceptually uniform brightness throughout */
+.oklchStrip {
+  background: linear-gradient(90deg,
+    oklch(68% .25 0),
+    oklch(68% .25 60),
+    oklch(68% .25 120),
+    oklch(68% .25 180),
+    oklch(68% .25 240),
+    oklch(68% .25 300),
+    oklch(68% .25 360)
+  );
+}
+
+/* Animated oklch hue cycle */
+@property --mhue {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+.animSwatch {
+  height: 28px;
+  border-radius: 6px;
+  background: oklch(68% .28 var(--mhue));
+  animation: hueCycle 4s linear infinite;
+}
+
+@keyframes hueCycle {
+  from { --mhue: 0;   }
+  to   { --mhue: 360; }
+}

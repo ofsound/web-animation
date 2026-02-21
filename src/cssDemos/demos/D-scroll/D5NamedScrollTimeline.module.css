@@ -1,0 +1,90 @@
+.stage {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  height: 210px;
+  timeline-scope: --prose;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #1e2a46;
+}
+
+@property --ring-progress {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+/* This panel scrolls and PUBLISHES its scroll as --prose timeline */
+.scroller {
+  flex: 1;
+  overflow-y: scroll;
+  scroll-timeline: --prose block;       /* named timeline */
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0d1223;
+}
+
+.line {
+  flex: 0 0 10px;
+  min-height: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: #1a2442;
+}
+.line.wide   { width: 90%; }
+.line.med    { width: 70%; }
+.line.short  { width: 50%; }
+
+/* Sidebar CONSUMES the named timeline to drive its progress ring */
+.sidebar {
+  width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #10172a;
+  border-left: 1px solid #1e2a46;
+  padding: 8px;
+}
+
+.ring {
+  --ring-progress: 0%;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: conic-gradient(
+    oklch(68% .28 260) var(--ring-progress),
+    #1a2442 0%
+  );
+  display: grid;
+  place-items: center;
+  animation: fillRing linear both;
+  animation-duration: 1s;
+  animation-timeline: --prose;          /* driven by the named timeline */
+  animation-range: 0% 100%;
+}
+
+.ring::after {
+  content: '';
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #10172a;
+}
+
+.ringLabel {
+  font-size: 9px;
+  color: #8aa0df;
+  font-family: var(--font-mono);
+  text-align: center;
+  line-height: 1.4;
+}
+
+@keyframes fillRing {
+  from { --ring-progress: 0%; }
+  to   { --ring-progress: 100%; }
+}

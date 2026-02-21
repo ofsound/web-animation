@@ -1,0 +1,41 @@
+.stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 210px;
+  perspective: 500px;
+}
+
+.cube {
+  width: 70px;
+  height: 70px;
+  transform-style: preserve-3d;
+  animation: spinCube 8s linear infinite;
+}
+
+@keyframes spinCube {
+  from { transform: rotateX(-20deg) rotateY(0deg); }
+  to   { transform: rotateX(-20deg) rotateY(360deg); }
+}
+
+.face {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border: 1px solid oklch(65% .22 260 / .5);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  color: #e0e8ff;
+  backdrop-filter: blur(4px);
+}
+
+/* Each face is pushed out by half the cube's depth (35px) */
+.front  { background: oklch(30% .18 260 / .6); transform: translateZ(35px); }
+.back   { background: oklch(30% .18 320 / .6); transform: rotateY(180deg)  translateZ(35px); }
+.left   { background: oklch(30% .18 145 / .6); transform: rotateY(-90deg)  translateZ(35px); }
+.right  { background: oklch(30% .18 45  / .6); transform: rotateY( 90deg)  translateZ(35px); }
+.top    { background: oklch(30% .18 200 / .6); transform: rotateX( 90deg)  translateZ(35px); }
+.bottom { background: oklch(30% .18 30  / .6); transform: rotateX(-90deg)  translateZ(35px); }

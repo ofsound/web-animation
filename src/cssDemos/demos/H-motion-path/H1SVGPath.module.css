@@ -1,0 +1,41 @@
+.stage {
+  position: relative;
+  width: 100%;
+  height: 210px;
+  overflow: hidden;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pathLine {
+  fill: none;
+  stroke: oklch(65% .22 260 / .25);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+
+.rocket {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+  offset-path: path('M 20,160 C 80,20 160,180 240,80 S 360,20 440,100');
+  offset-distance: 0%;
+  offset-rotate: auto;    /* auto-rotates to face the direction of travel */
+  animation: followPath 4s cubic-bezier(.4,0,.6,1) infinite;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes followPath {
+  0%   { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}

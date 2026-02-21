@@ -1,0 +1,2 @@
+export declare const code = "/* clip-path: inset() with animated right edge = wipe reveal */\n\n.fill {\n  animation: wipeIn .9s cubic-bezier(.25,.1,.25,1) both;\n}\n\n@keyframes wipeIn {\n  from { clip-path: inset(0 100% 0 0 round 6px); }  /* fully clipped */\n  to   { clip-path: inset(0   0% 0 0 round 6px); }  /* fully visible */\n}\n\n/* The round parameter preserves border-radius on the clip shape */";
+export default function I1InsetWipe(): import("react/jsx-runtime").JSX.Element;

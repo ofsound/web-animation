@@ -1,0 +1,2 @@
+export declare const code = "/* clip-path: circle() transitions from 0% \u2192 120% for a radial reveal */\n\n.panel {\n  clip-path: circle(0% at 50% 50%);     /* collapsed \u2014 invisible */\n  transition: clip-path .55s cubic-bezier(.4,0,.2,1);\n}\n\n.panel.open {\n  clip-path: circle(120% at 50% 50%);  /* expanded past all corners */\n}\n\n/* You can also reveal from a click point by setting the \"at X Y\" to\n   the mouse coordinates for a true material-design ripple reveal. */";
+export default function I2CircleReveal(): import("react/jsx-runtime").JSX.Element;

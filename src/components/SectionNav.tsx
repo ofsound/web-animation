@@ -1,9 +1,15 @@
-import type { AnimationCategory } from "../data/animations";
+import type { CategoryIconName } from "../data/animations";
 import type { Theme } from "../theme-init";
 import { CategoryIcon } from "./CategoryIcon";
 
+interface NavCategory {
+  id: string;
+  label: string;
+  icon: CategoryIconName;
+}
+
 interface SectionNavProps {
-  categories: AnimationCategory[];
+  categories: NavCategory[];
   activeSection: string;
   onSelect: (id: string) => void;
   theme: Theme;
@@ -52,7 +58,7 @@ export function SectionNav({
 }
 
 interface MobileJumpBarProps {
-  categories: AnimationCategory[];
+  categories: NavCategory[];
   activeSection: string;
   onSelect: (id: string) => void;
 }

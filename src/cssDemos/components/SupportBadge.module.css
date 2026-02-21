@@ -1,0 +1,12 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+}
+.widely-available { background: #183422; color: #86efac; border-color: #2a6e44; }
+.baseline-2024 { background: #1f2842; color: #93c5fd; border-color: #2f4f87; }
+.new-2025 { background: #302244; color: #c4b5fd; border-color: #5c3da5; }
+.experimental { background: #3e231c; color: #fdba74; border-color: #8f5035; }

@@ -1,0 +1,2 @@
+export declare const code = "/* @property typed as <percentage> lets CSS animate inside conic-gradient */\n@property --sweep {\n  syntax: '<percentage>';\n  inherits: false;\n  initial-value: 0%;\n}\n\n.ring {\n  background: conic-gradient(\n    oklch(68% .28 260) var(--sweep),\n    oklch(20% .08 260) 0%\n  );\n  animation: sweepUp 2.2s cubic-bezier(.4,0,.2,1) infinite;\n}\n\n@keyframes sweepUp {\n  0%   { --sweep:   0%; }\n  60%  { --sweep: 100%; }\n  100% { --sweep:   0%; }\n}";
+export default function F2ConicSweep(): import("react/jsx-runtime").JSX.Element;

@@ -1,0 +1,45 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  padding: 10px 16px;
+}
+
+/* font-weight is a shorthand for font-variation-settings 'wght' — animatable */
+.weightAnim {
+  font-size: 26px;
+  color: #e0e8ff;
+  letter-spacing: .02em;
+  animation: weightCycle 3s ease-in-out infinite alternate;
+}
+
+@keyframes weightCycle {
+  from { font-weight: 100; }
+  to   { font-weight: 900; }
+}
+
+/* Full font-variation-settings for axes not exposed as CSS properties */
+.axisAnim {
+  font-size: 20px;
+  color: #8aa0df;
+  letter-spacing: .04em;
+  font-family: var(--font-mono);
+  animation: italicSlant 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes italicSlant {
+  from { font-style: oblique  0deg; }
+  to   { font-style: oblique 14deg; }
+}
+
+.label {
+  font-size: 9px;
+  color: #4a5e8a;
+  font-family: var(--font-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}

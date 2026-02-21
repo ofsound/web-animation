@@ -1,0 +1,55 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  padding: 10px 14px;
+}
+
+.label {
+  font-size: 10px;
+  color: #4a5e8a;
+  font-family: var(--font-mono);
+}
+
+/* calc-size() lets you do math ON an intrinsic keyword size */
+.pill {
+  appearance: none;
+  text-align: left;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid #2a3a68;
+  background: #10172a;
+  color: #c5d1f5;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  cursor: pointer;
+  width: fit-content;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+}
+.pill:focus-visible {
+  outline: 2px solid oklch(75% .22 260 / .8);
+  outline-offset: 2px;
+}
+
+/* Collapsed: just wide enough for the icon */
+.pill.collapsed {
+  width: 36px;
+}
+
+/* Expanded: calc-size(fit-content, size + 24px) — content width plus extra */
+.pill.expanded {
+  interpolate-size: allow-keywords;
+  width: calc-size(fit-content, size + 24px);
+}
+
+.icon  { flex-shrink: 0; font-size: 14px; }
+.text  { white-space: nowrap; }

@@ -1,0 +1,61 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  background: #05060e;
+  border-radius: 12px;
+}
+
+.neon {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  color: oklch(90% .15 260);
+  animation: neonPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes neonPulse {
+  from {
+    filter:
+      drop-shadow(0 0  4px oklch(80% .28 260))
+      drop-shadow(0 0 12px oklch(68% .28 260))
+      drop-shadow(0 0 24px oklch(55% .28 260 / .7));
+    color: oklch(95% .1 260);
+  }
+  to {
+    filter:
+      drop-shadow(0 0  8px oklch(80% .28 260))
+      drop-shadow(0 0 24px oklch(68% .28 260))
+      drop-shadow(0 0 48px oklch(55% .28 260 / .9))
+      drop-shadow(0 0 72px oklch(45% .28 260 / .5));
+    color: oklch(100% 0 0);
+  }
+}
+
+.neonGreen {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: oklch(88% .18 145);
+  font-family: var(--font-mono);
+  animation: neonGreenPulse 2.4s ease-in-out infinite alternate;
+  animation-delay: -.8s;
+}
+
+@keyframes neonGreenPulse {
+  from {
+    filter:
+      drop-shadow(0 0  3px oklch(80% .28 145))
+      drop-shadow(0 0 10px oklch(65% .28 145 / .6));
+  }
+  to {
+    filter:
+      drop-shadow(0 0  6px oklch(80% .28 145))
+      drop-shadow(0 0 20px oklch(65% .28 145))
+      drop-shadow(0 0 40px oklch(50% .28 145 / .8));
+  }
+}

@@ -1,0 +1,53 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 220px;
+  padding: 0 14px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lbl {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: #8aa0df;
+  width: 112px;
+  flex-shrink: 0;
+}
+
+.track {
+  flex: 1;
+  height: 24px;
+  background: #10172a;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #1e2a46;
+}
+
+.dot {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  animation: slide 1.6s infinite;
+}
+
+.normal          { background: oklch(70% .22 260); animation-direction: normal; }
+.reverse         { background: oklch(70% .22 145); animation-direction: reverse; }
+.alternate       { background: oklch(70% .22 45);  animation-direction: alternate; }
+.alternate-reverse { background: oklch(70% .22 320); animation-direction: alternate-reverse; }
+
+@keyframes slide {
+  from { left: 4px; }
+  to   { left: calc(100% - 20px); }
+}

@@ -1,0 +1,2 @@
+export declare const code = "/* steps(8, end) \u2014 jumps through 8 discrete positions */\n/* Perfect for sprite-sheet frame-by-frame animation   */\n@keyframes flipbook {\n  from { transform: translateX(0); }\n  to   { transform: translateX(-448px); }  /* 8 frames \u00D7 56px */\n}\n\n.frames {\n  width: 448px;\n  animation: flipbook 1s steps(8, end) infinite;\n}";
+export default function B2StepsSprite(): import("react/jsx-runtime").JSX.Element;

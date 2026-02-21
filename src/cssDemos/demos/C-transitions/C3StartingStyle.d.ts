@@ -1,0 +1,2 @@
+export declare const code = "/* @starting-style defines where a NEWLY INSERTED element begins its transition.\n   No JS animation library needed \u2014 the browser handles it on DOM insertion. */\n\n.item {\n  opacity: 1;\n  transform: translateX(0);\n  transition:\n    opacity   .4s ease,\n    transform .4s cubic-bezier(.22,.99,.38,1.15);\n}\n\n@starting-style {\n  .item {     /* <-- start FROM here when first added to DOM */\n    opacity: 0;\n    transform: translateX(-24px);\n  }\n}";
+export default function C3StartingStyle(): import("react/jsx-runtime").JSX.Element;

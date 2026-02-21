@@ -1,0 +1,54 @@
+.stage {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 200px;
+  width: 100%;
+  gap: 24px;
+}
+
+/* track for each ball */
+.track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  width: 48px;
+}
+
+.ball {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 32%, oklch(80% .22 260), oklch(52% .28 260));
+  box-shadow: 0 0 18px oklch(68% .26 260 / .55);
+  animation: bounce 1s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+
+.shadow {
+  width: 40px;
+  height: 10px;
+  border-radius: 50%;
+  background: oklch(20% .12 260 / .6);
+  animation: shadowShrink 1s ease-in-out infinite alternate;
+  margin-top: 4px;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0) scaleY(1) scaleX(1);
+  }
+  90% {
+    transform: translateY(-130px) scaleY(1.06) scaleX(.96);
+  }
+  to {
+    transform: translateY(-140px) scaleY(1.08) scaleX(.94);
+  }
+}
+
+@keyframes shadowShrink {
+  from { transform: scaleX(1); opacity: .6; }
+  to   { transform: scaleX(.35); opacity: .2; }
+}

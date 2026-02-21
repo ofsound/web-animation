@@ -1,0 +1,68 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  padding: 10px 14px;
+}
+
+.card {
+  border-radius: 10px;
+  border: 1px solid #2a3a68;
+  background: #10172a;
+  overflow: hidden;
+}
+
+.header {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e0e8ff;
+}
+.header:focus-visible {
+  outline: 2px solid oklch(75% .22 260 / .8);
+  outline-offset: -2px;
+}
+
+.toggle {
+  font-size: 14px;
+  transition: rotate .3s ease;
+  color: #7a8db8;
+}
+.toggle.open { rotate: 180deg; }
+
+/* The magic: interpolate-size lets height transition to/from "auto" */
+.body {
+  /* Opt-in to keyword size interpolation */
+  interpolate-size: allow-keywords;
+
+  height: 0;
+  transition: height .4s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+
+.body.open {
+  height: auto;   /* ← would normally NOT animate — now it does! */
+}
+
+.bodyInner {
+  padding: 0 14px 12px;
+  font-size: 11px;
+  color: #7a8db8;
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}

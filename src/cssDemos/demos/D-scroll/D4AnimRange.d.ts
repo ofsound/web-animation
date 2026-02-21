@@ -1,0 +1,2 @@
+export declare const code = "/* animation-range narrows WHEN in the scroll timeline the animation runs */\n.card {\n  animation: slideIn linear both;\n  animation-timeline: view(block);\n\n  /* Only animates during the \"entry\" phase of the scroll intersection */\n  animation-range: entry 0% cover 18%;\n}\n\n@keyframes slideIn {\n  from { opacity: 0; transform: scale(.88) translateY(20px); filter: blur(3px); }\n  to   { opacity: 1; transform: scale(1)   translateY(0);    filter: blur(0); }\n}";
+export default function D4AnimRange(): import("react/jsx-runtime").JSX.Element;

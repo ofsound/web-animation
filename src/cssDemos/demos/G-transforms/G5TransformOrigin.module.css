@@ -1,0 +1,50 @@
+.stage {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  align-items: end;
+  width: 100%;
+  height: 210px;
+  padding: 20px 12px 12px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pivot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 90px;
+}
+
+.box {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: oklch(50% .22 260);
+  animation: swingBox 2s ease-in-out infinite alternate;
+}
+
+/* Each gets a different transform-origin */
+.originTopLeft    { composes: box; transform-origin: top left;   background: oklch(50% .22 260); }
+.originCenter     { composes: box; transform-origin: center;     background: oklch(50% .22 145); }
+.originBottomRight{ composes: box; transform-origin: bottom right; background: oklch(50% .22 45); }
+.originCustom     { composes: box; transform-origin: 80% 20%;   background: oklch(50% .22 320); }
+
+@keyframes swingBox {
+  from { rotate: -40deg; }
+  to   { rotate:  40deg; }
+}
+
+.lbl {
+  font-size: 9px;
+  color: #7a8db8;
+  font-family: var(--font-mono);
+  text-align: center;
+  line-height: 1.4;
+}

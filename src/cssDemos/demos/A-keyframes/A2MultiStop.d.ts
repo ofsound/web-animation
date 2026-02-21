@@ -1,0 +1,2 @@
+export declare const code = "/* Five-stop heartbeat \u2014 note 14% / 28% / 42% timing */\n@keyframes heartbeat {\n  0%  { transform: scale(1); }\n  14% { transform: scale(1.22); }   /* first beat peak */\n  28% { transform: scale(0.96); }   /* slight rebound */\n  42% { transform: scale(1.18); }   /* second beat peak */\n  70% { transform: scale(1); }      /* settle */\n  100%{ transform: scale(1); }      /* hold */\n}\n\n.heart {\n  animation: heartbeat 1.4s linear infinite;\n}";
+export default function A2MultiStop(): import("react/jsx-runtime").JSX.Element;

@@ -1,0 +1,2 @@
+export declare const code = "/* offset-path lets an element travel along any SVG/CSS path */\n.rocket {\n  offset-path: path('M 20,160 C 80,20 160,180 240,80 S 360,20 440,100');\n  offset-distance: 0%;\n  offset-rotate: auto;    /* automatically faces direction of travel */\n\n  animation: followPath 4s ease-in-out infinite;\n}\n\n@keyframes followPath {\n  from { offset-distance:   0%; }\n  to   { offset-distance: 100%; }\n}";
+export default function H1SVGPath(): import("react/jsx-runtime").JSX.Element;

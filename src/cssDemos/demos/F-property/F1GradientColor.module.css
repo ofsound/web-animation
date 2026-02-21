@@ -1,0 +1,57 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  padding: 12px 16px;
+}
+
+.label {
+  font-size: 10px;
+  color: #7a8db8;
+  font-family: var(--font-mono);
+  align-self: flex-start;
+}
+
+/* WITHOUT @property — browser can't interpolate custom props as colors
+   It just snaps between values */
+.barDumb {
+  width: 100%;
+  height: 28px;
+  border-radius: 6px;
+  --c-start: oklch(68% .28 260);
+  --c-end:   oklch(68% .28 30);
+  background: linear-gradient(90deg, var(--c-start), var(--c-end));
+  animation: dumbShift 3s linear infinite alternate;
+}
+@keyframes dumbShift {
+  from { --c-start: oklch(68% .28 260); }
+  to   { --c-start: oklch(68% .28 30);  }
+}
+
+/* WITH @property — variable is typed as <color>, interpolation works */
+@property --gc-from {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: oklch(68% .28 260);
+}
+@property --gc-to {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: oklch(68% .28 160);
+}
+
+.barSmart {
+  width: 100%;
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--gc-from), var(--gc-to));
+  animation: smartShift 3s linear infinite alternate;
+}
+@keyframes smartShift {
+  from { --gc-from: oklch(68% .28 260); --gc-to: oklch(68% .28 160); }
+  to   { --gc-from: oklch(68% .28 30);  --gc-to: oklch(68% .28 330); }
+}

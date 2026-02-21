@@ -1,7 +1,10 @@
 import { type ReactNode } from "react";
-import type { AnimationCategory } from "../data/animations";
+interface SectionCategory {
+    id: string;
+    label: string;
+}
 interface CategorySectionProps {
-    category: AnimationCategory;
+    category: SectionCategory;
     count: number;
     eager?: boolean;
     children: ReactNode;
