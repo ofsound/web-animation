@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { CategorySection } from "./CategorySection";
-import type { AnimationCategory } from "../data/animations";
+import type { Category } from "../types/demo";
 
-const mockCategory: AnimationCategory = {
+const mockCategory: Category = {
   id: "hover",
   label: "Hover & Interaction",
   icon: "pointer",

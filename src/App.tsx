@@ -1,56 +1,46 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentType,
-} from "react";
-import { CssCategory } from "./categories/CssCategory";
-import { ComplexKeyframes } from "./categories/ComplexKeyframes";
-import { EntranceEffects } from "./categories/EntranceEffects";
-import { HoverInteractions } from "./categories/HoverInteractions";
-import { LoadingStates } from "./categories/LoadingStates";
-import { TextAnimations } from "./categories/TextAnimations";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimationCard } from "./components/AnimationCard";
 import { CategorySection } from "./components/CategorySection";
 import { MobileJumpBar, SectionNav } from "./components/SectionNav";
 import {
-  cssAnimationCategories,
-  cssCategoryCounts,
-  cssDemoCategoryById,
-  cssDemosByCategory,
-  type CssAnimationCategoryId,
-} from "./data/cssAnimations";
-import {
-  animationCategories,
-  categoryCounts,
-  demoCategoryById,
-  type AnimationCategoryId,
-} from "./data/animations";
+  getGalleryData,
+  resolveHashToModeAndTarget,
+  type DemoEntry,
+  type GalleryMode,
+} from "./data/demoRegistry";
 import { useActiveSection } from "./hooks/useActiveSection";
 import { useTheme } from "./hooks/useTheme";
+import type { Category } from "./types/demo";
 
-const categoryComponents: Record<AnimationCategoryId, ComponentType> = {
-  hover: HoverInteractions,
-  entrance: EntranceEffects,
-  loading: LoadingStates,
-  text: TextAnimations,
-  complex: ComplexKeyframes,
+const MAX_DEMO_LOOKUP_FRAMES = 45;
+
+type GalleryDataView = {
+  categories: Category[];
+  demosByCategory: ReadonlyMap<string, DemoEntry[]>;
+  demoCategoryById: ReadonlyMap<string, string>;
+  categoryCounts: ReadonlyMap<string, number>;
 };
-
-type GalleryMode = "tailwind" | "css";
-
-/** Time to wait for section scroll before scrolling to demo; matches typical scroll duration. */
-const SCROLL_DURATION_MS = 520;
 
 function App() {
   const [galleryMode, setGalleryMode] = useState<GalleryMode>("tailwind");
   const { theme, toggleTheme } = useTheme();
+  const activeNavigationTokenRef = useRef(0);
+
+  const galleryDataByMode = useMemo<Record<GalleryMode, GalleryDataView>>(
+    () => ({
+      tailwind: getGalleryData("tailwind"),
+      css: getGalleryData("css"),
+    }),
+    [],
+  );
+  const { categories, demosByCategory, categoryCounts } = useMemo(
+    () => galleryDataByMode[galleryMode],
+    [galleryDataByMode, galleryMode],
+  );
+
   const sectionIds = useMemo(
-    () =>
-      galleryMode === "tailwind"
-        ? animationCategories.map((category) => category.id)
-        : cssAnimationCategories.map((category) => category.id),
-    [galleryMode],
+    () => categories.map((category) => category.id),
+    [categories],
   );
   const activeSection = useActiveSection(sectionIds);
 
@@ -61,78 +51,111 @@ function App() {
       : "smooth";
   };
 
-  const scrollToSection = useCallback((id: string, shouldUpdateHash = true) => {
+  const nextNavigationToken = useCallback(() => {
+    activeNavigationTokenRef.current += 1;
+    return activeNavigationTokenRef.current;
+  }, []);
+
+  const isNavigationCurrent = useCallback(
+    (token: number) => token === activeNavigationTokenRef.current,
+    [],
+  );
+
+  const scrollToSectionWithToken = useCallback((
+    id: string,
+    token: number,
+    shouldUpdateHash = true,
+  ) => {
+    if (!isNavigationCurrent(token)) return false;
+
     const section = document.getElementById(id);
-    if (!section) return;
+    if (!section) return false;
 
     section.scrollIntoView({ behavior: getScrollBehavior(), block: "start" });
 
     if (shouldUpdateHash) {
       window.history.replaceState(null, "", `#${id}`);
     }
-  }, []);
+    return true;
+  }, [isNavigationCurrent]);
+
+  const scrollToSection = useCallback((id: string, shouldUpdateHash = true) => {
+    const token = nextNavigationToken();
+    scrollToSectionWithToken(id, token, shouldUpdateHash);
+  }, [nextNavigationToken, scrollToSectionWithToken]);
 
   const openDemo = useCallback(
-    (demoId: string, mode: GalleryMode, shouldUpdateHash = true) => {
-      const categoryId =
-        mode === "tailwind"
-          ? demoCategoryById.get(demoId)
-          : cssDemoCategoryById.get(demoId);
+    (
+      demoId: string,
+      mode: GalleryMode,
+      shouldUpdateHash = true,
+      navigationToken?: number,
+    ) => {
+      const data = galleryDataByMode[mode];
+      const categoryId = data.demoCategoryById.get(demoId);
       if (!categoryId) return;
 
-      scrollToSection(categoryId, false);
+      const token = navigationToken ?? nextNavigationToken();
+      scrollToSectionWithToken(categoryId, token, false);
 
-      window.setTimeout(() => {
+      let frameCount = 0;
+      const findDemoAndScroll = () => {
+        if (!isNavigationCurrent(token)) return;
+
         const demo = document.getElementById(demoId);
-        demo?.scrollIntoView({ behavior: getScrollBehavior(), block: "start" });
+        if (demo) {
+          demo.scrollIntoView({ behavior: getScrollBehavior(), block: "start" });
 
-        if (shouldUpdateHash) {
-          window.history.replaceState(null, "", `#${demoId}`);
+          if (shouldUpdateHash) {
+            window.history.replaceState(null, "", `#${demoId}`);
+          }
+          return;
         }
-      }, SCROLL_DURATION_MS);
+
+        frameCount += 1;
+        if (frameCount < MAX_DEMO_LOOKUP_FRAMES) {
+          window.requestAnimationFrame(findDemoAndScroll);
+        }
+      };
+
+      window.requestAnimationFrame(findDemoAndScroll);
     },
-    [scrollToSection],
+    [
+      galleryDataByMode,
+      isNavigationCurrent,
+      nextNavigationToken,
+      scrollToSectionWithToken,
+    ],
   );
 
   useEffect(() => {
-    const tailwindSectionIds = animationCategories.map(
-      (category) => category.id,
-    );
-    const cssSectionIds = cssAnimationCategories.map((category) => category.id);
-
     const handleHashNavigation = () => {
       const hash = window.location.hash.replace("#", "");
-      if (!hash) return;
+      const resolved = resolveHashToModeAndTarget(hash);
+      if (!resolved) return;
 
-      if (tailwindSectionIds.includes(hash as AnimationCategoryId)) {
-        setGalleryMode("tailwind");
-        window.setTimeout(() => scrollToSection(hash, false), 0);
-        return;
-      }
+      const token = nextNavigationToken();
+      setGalleryMode(resolved.mode);
+      const { targetId } = resolved;
+      const categoryIds = galleryDataByMode[resolved.mode].categories.map(
+        (c) => c.id,
+      );
+      const isSection = categoryIds.includes(targetId);
 
-      if (demoCategoryById.has(hash)) {
-        setGalleryMode("tailwind");
-        window.setTimeout(() => openDemo(hash, "tailwind", false), 0);
-        return;
-      }
-
-      if (cssSectionIds.includes(hash as CssAnimationCategoryId)) {
-        setGalleryMode("css");
-        window.setTimeout(() => scrollToSection(hash, false), 0);
-        return;
-      }
-
-      if (cssDemoCategoryById.has(hash)) {
-        setGalleryMode("css");
-        window.setTimeout(() => openDemo(hash, "css", false), 0);
-      }
+      window.requestAnimationFrame(() => {
+        if (isSection) {
+          scrollToSectionWithToken(targetId, token, false);
+          return;
+        }
+        openDemo(targetId, resolved.mode, false, token);
+      });
     };
 
     handleHashNavigation();
     window.addEventListener("hashchange", handleHashNavigation);
 
     return () => window.removeEventListener("hashchange", handleHashNavigation);
-  }, [openDemo, scrollToSection]);
+  }, [galleryDataByMode, nextNavigationToken, openDemo, scrollToSectionWithToken]);
 
   return (
     <div className="min-h-screen text-[var(--text-1)]">
@@ -152,11 +175,7 @@ function App() {
           </div>
 
           <SectionNav
-            categories={
-              galleryMode === "tailwind"
-                ? animationCategories
-                : cssAnimationCategories
-            }
+            categories={categories}
             activeSection={activeSection}
             onSelect={scrollToSection}
             theme={theme}
@@ -189,51 +208,39 @@ function App() {
       </header>
 
       <MobileJumpBar
-        categories={
-          galleryMode === "tailwind"
-            ? animationCategories
-            : cssAnimationCategories
-        }
+        categories={categories}
         activeSection={activeSection}
         onSelect={scrollToSection}
       />
 
       <main className="relative mx-auto max-w-7xl bg-[var(--surface-main)] px-5 pb-24 sm:px-6">
-        {galleryMode === "tailwind" ? (
-          <div className="space-y-7 pt-10 sm:space-y-10">
-            {animationCategories.map((category, index) => {
-              const SectionComponent = categoryComponents[category.id];
-
-              return (
-                <CategorySection
-                  key={category.id}
-                  category={category}
-                  count={categoryCounts.get(category.id) ?? 0}
-                  eager={index === 0}
-                >
-                  <SectionComponent />
-                </CategorySection>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="space-y-7 pt-10 sm:space-y-10">
-            {cssAnimationCategories.map((category, index) => {
-              const demos = cssDemosByCategory.get(category.id) ?? [];
-
-              return (
-                <CategorySection
-                  key={category.id}
-                  category={category}
-                  count={cssCategoryCounts.get(category.id) ?? 0}
-                  eager={index === 0}
-                >
-                  <CssCategory demos={demos} />
-                </CategorySection>
-              );
-            })}
-          </div>
-        )}
+        <div className="space-y-7 pt-10 sm:space-y-10">
+          {categories.map((category, index) => {
+            const demos = demosByCategory.get(category.id) ?? [];
+            return (
+              <CategorySection
+                key={category.id}
+                category={category}
+                count={categoryCounts.get(category.id) ?? 0}
+                eager={index === 0}
+              >
+                {demos.map((demo) => (
+                  <AnimationCard
+                    key={demo.id}
+                    id={demo.id}
+                    metadata={{
+                      title: demo.title,
+                      description: demo.description,
+                      code: demo.code,
+                    }}
+                  >
+                    <demo.Component />
+                  </AnimationCard>
+                ))}
+              </CategorySection>
+            );
+          })}
+        </div>
       </main>
 
       <footer className="border-t border-[var(--card-border)] py-8 text-center">

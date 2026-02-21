@@ -1,4 +1,4 @@
-import type { CategoryIconName } from "../data/animations";
+import type { CategoryIconName } from "../types/demo";
 
 interface CategoryIconProps {
   icon: CategoryIconName;

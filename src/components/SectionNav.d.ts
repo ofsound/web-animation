@@ -1,4 +1,4 @@
-import type { CategoryIconName } from "../data/animations";
+import type { CategoryIconName } from "../types/demo";
 import type { Theme } from "../theme-init";
 interface NavCategory {
     id: string;

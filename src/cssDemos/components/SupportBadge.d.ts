@@ -1,4 +1,5 @@
-export type SupportLevel = 'widely-available' | 'baseline-2024' | 'new-2025' | 'experimental';
+import type { SupportLevel } from "../../types/demo";
+export type { SupportLevel } from "../../types/demo";
 export default function SupportBadge({ level }: {
     level: SupportLevel;
 }): import("react/jsx-runtime").JSX.Element;

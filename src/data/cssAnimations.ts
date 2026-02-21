@@ -1,24 +1,19 @@
-import { demoCategories, type DemoDefinition } from "../cssDemos/demos/catalog";
-import type { CategoryIconName } from "./animations";
+import { demoCategories } from "../cssDemos/demos/catalog";
+import type {
+  Category,
+  CategoryIconName,
+  Demo,
+} from "../types/demo";
 
 export type CssAnimationCategoryId = `css-${string}`;
 
-export interface CssAnimationCategory {
+export interface CssAnimationCategory extends Category {
   id: CssAnimationCategoryId;
-  label: string;
-  icon: CategoryIconName;
-  description: string;
   sourceCategoryId: string;
 }
 
-export interface CssAnimationDemo {
-  id: string;
-  title: string;
-  description: string;
-  code: string;
-  category: CssAnimationCategoryId;
+export interface CssAnimationDemo extends Demo<CssAnimationCategoryId, "css"> {
   sourceCategoryId: string;
-  component: DemoDefinition["Component"];
 }
 
 const categoryIconByLetter: Record<string, CategoryIconName> = {
@@ -75,9 +70,11 @@ export const cssAnimationDemos: CssAnimationDemo[] = demoCategories.flatMap(
       title: demo.title,
       description: demo.description,
       code: demo.code,
-      category: toCategoryId(category.id),
+      categoryId: toCategoryId(category.id),
       sourceCategoryId: category.id,
-      component: demo.Component,
+      Component: demo.Component,
+      source: "css" as const,
+      support: demo.support,
     })),
 );
 
@@ -92,20 +89,19 @@ export const cssAnimationDemoMetaById = new Map(
   ]),
 );
 
-export const cssDemoCategoryById = new Map(
-  cssAnimationDemos.map((demo) => [demo.id, demo.category]),
+export const cssDemosByCategory = new Map<CssAnimationCategoryId, CssAnimationDemo[]>(
+  cssAnimationCategories.map((category) => [category.id, []]),
 );
+
+export const cssDemoCategoryById = new Map<string, CssAnimationCategoryId>();
+for (const demo of cssAnimationDemos) {
+  cssDemoCategoryById.set(demo.id, demo.categoryId);
+  cssDemosByCategory.get(demo.categoryId)?.push(demo);
+}
 
 export const cssCategoryCounts = new Map<CssAnimationCategoryId, number>(
   cssAnimationCategories.map((category) => [
     category.id,
-    cssAnimationDemos.filter((demo) => demo.category === category.id).length,
-  ]),
-);
-
-export const cssDemosByCategory = new Map<CssAnimationCategoryId, CssAnimationDemo[]>(
-  cssAnimationCategories.map((category) => [
-    category.id,
-    cssAnimationDemos.filter((demo) => demo.category === category.id),
+    cssDemosByCategory.get(category.id)?.length ?? 0,
   ]),
 );

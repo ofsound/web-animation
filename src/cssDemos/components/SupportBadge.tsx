@@ -1,6 +1,7 @@
-import styles from './SupportBadge.module.css';
+import type { SupportLevel } from "../../types/demo";
+import styles from "./SupportBadge.module.css";
 
-export type SupportLevel = 'widely-available' | 'baseline-2024' | 'new-2025' | 'experimental';
+export type { SupportLevel } from "../../types/demo";
 
 export default function SupportBadge({ level }: { level: SupportLevel }) {
   const label = {

@@ -2,10 +2,17 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { AnimationCard } from "./AnimationCard";
 
+const mockMetadata = {
+  title: "Scale & Glow",
+  description:
+    "Smooth scale-up with a glowing box-shadow on hover using transition-all.",
+  code: "<button>Hover me</button>",
+};
+
 describe("AnimationCard", () => {
   it("renders title and description from metadata", () => {
     render(
-      <AnimationCard id="hover-scale-glow">
+      <AnimationCard id="hover-scale-glow" metadata={mockMetadata}>
         <span>Preview</span>
       </AnimationCard>,
     );
@@ -14,15 +21,5 @@ describe("AnimationCard", () => {
     expect(
       screen.getByText(/Smooth scale-up with a glowing box-shadow on hover/),
     ).toBeInTheDocument();
-  });
-
-  it("throws when id is not in metadata", () => {
-    expect(() =>
-      render(
-        <AnimationCard id="nonexistent-demo">
-          <span>Preview</span>
-        </AnimationCard>,
-      ),
-    ).toThrow('AnimationCard: no metadata found for demo id "nonexistent-demo"');
   });
 });

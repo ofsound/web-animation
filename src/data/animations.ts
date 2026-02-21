@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import type { Category } from "../types/demo";
 
+export type { CategoryIconName } from "../types/demo";
 export type AnimationCategoryId = "hover" | "entrance" | "loading" | "text" | "complex";
 export type AnimationDifficulty = "Basic" | "Intermediate" | "Advanced";
-export type CategoryIconName = "pointer" | "spark" | "loader" | "type" | "layers";
 
 export interface AnimationDemo {
   id: string;
@@ -15,11 +16,8 @@ export interface AnimationDemo {
   preview: (() => ReactNode) | null;
 }
 
-export interface AnimationCategory {
+export interface AnimationCategory extends Category {
   id: AnimationCategoryId;
-  label: string;
-  icon: CategoryIconName;
-  description: string;
 }
 
 export const animationCategories: AnimationCategory[] = [

@@ -1,23 +1,25 @@
 import { useState, type ReactNode } from "react";
-import { animationDemoMetaById, type AnimationDemo } from "../data/animations";
 
 type CopyResult = "success" | "error";
 
+export interface DemoMetadata {
+  title: string;
+  description: string;
+  code: string;
+}
+
 interface AnimationCardProps {
-  /** Demo id; metadata (title, description, code, etc.) is read from animationDemoMetaById */
   id: string;
-  /** The live preview (JSX) for the animation demo */
+  metadata: DemoMetadata;
   children: ReactNode;
-  /** Optional metadata override for external demo datasets (for example CSS demos). */
-  metadataOverride?: Pick<AnimationDemo, "title" | "description" | "code">;
   accent?: string;
   onCopyResult?: (result: CopyResult, demoId: string) => void;
 }
 
 export function AnimationCard({
   id,
+  metadata,
   children,
-  metadataOverride,
   accent,
   onCopyResult,
 }: AnimationCardProps) {
@@ -25,11 +27,6 @@ export function AnimationCard({
     "idle",
   );
   const [replayKey, setReplayKey] = useState(0);
-
-  const metadata = metadataOverride ?? animationDemoMetaById.get(id);
-  if (!metadata) {
-    throw new Error(`AnimationCard: no metadata found for demo id "${id}"`);
-  }
 
   const { title, description, code } = metadata;
 
