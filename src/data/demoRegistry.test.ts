@@ -53,7 +53,7 @@ describe("demoRegistry", () => {
     expect(() =>
       assertNoDuplicateDemoIdsByMode({
         tailwind: new Map([["shared-demo-id", "hover"]]),
-        css: new Map([["shared-demo-id", "css-a"]]),
+        css: new Map([["shared-demo-id", "css-keyframes"]]),
       }),
     ).toThrow('Duplicate demo id "shared-demo-id"');
   });

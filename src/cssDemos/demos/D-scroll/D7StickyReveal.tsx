@@ -44,7 +44,7 @@ export default function D7StickyReveal() {
   return (
     <div className={styles.stage}>
       <div className={styles.box}>
-        <span className={styles.label}>D7 · Contain Range</span>
+        <span className={styles.label}>Contain Range</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { AnimationCard } from "./AnimationCard";
 
@@ -21,5 +21,26 @@ describe("AnimationCard", () => {
     expect(
       screen.getByText(/Smooth scale-up with a glowing box-shadow on hover/),
     ).toBeInTheDocument();
+  });
+
+  it("updates the live preview for tailwind code edits", () => {
+    render(
+      <AnimationCard
+        id="hover-scale-glow"
+        metadata={{ ...mockMetadata, source: "tailwind" }}
+      >
+        <span>Preview</span>
+      </AnimationCard>,
+    );
+
+    expect(screen.getByText("Hover me")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Live code editor/i), {
+      target: {
+        value: '<button className="rounded-xl bg-accent px-6 py-3">Edited</button>',
+      },
+    });
+
+    expect(screen.getByText("Edited")).toBeInTheDocument();
   });
 });

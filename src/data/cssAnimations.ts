@@ -9,57 +9,51 @@ export type CssAnimationCategoryId = `css-${string}`;
 
 interface CssAnimationCategory extends Category {
   id: CssAnimationCategoryId;
-  sourceCategoryId: string;
 }
+export type CssAnimationDemo = Demo<CssAnimationCategoryId, "css">;
 
-export interface CssAnimationDemo extends Demo<CssAnimationCategoryId, "css"> {
-  sourceCategoryId: string;
-}
-
-const categoryIconByLetter: Record<string, CategoryIconName> = {
-  A: "spark",
-  B: "spark",
-  C: "pointer",
-  D: "layers",
-  E: "layers",
-  F: "loader",
-  G: "pointer",
-  H: "pointer",
-  I: "pointer",
-  J: "type",
-  K: "type",
-  L: "loader",
-  M: "layers",
+const categoryIconById: Record<string, CategoryIconName> = {
+  keyframes: "spark",
+  easing: "spark",
+  transitions: "pointer",
+  scroll: "layers",
+  "view-transitions": "layers",
+  property: "loader",
+  transforms: "pointer",
+  "motion-path": "pointer",
+  "clip-path": "pointer",
+  filters: "type",
+  text: "type",
+  size: "loader",
+  color: "layers",
 };
 
-const categoryDescriptionByLetter: Record<string, string> = {
-  A: "Keyframe fundamentals and timing composition techniques.",
-  B: "Easing strategies from cubic-bezier curves to stepped timing.",
-  C: "Transition primitives including starting-style and allow-discrete.",
-  D: "Scroll-linked timelines, ranges, and view timeline patterns.",
-  E: "View Transition API techniques for state and page-like morphing.",
-  F: "Typed custom property animation with @property registration.",
-  G: "2D/3D transform composition, perspective, and transform origin.",
-  H: "Motion path APIs with path(), circle(), ray(), and ellipse().",
-  I: "clip-path morphs and reveal patterns with geometric shapes.",
-  J: "Filter and backdrop-filter animation patterns.",
-  K: "Typography animation patterns from gradients to variable fonts.",
-  L: "Layout/size transition techniques, including modern and fallback approaches.",
-  M: "Color-space motion and animation composition behavior.",
+const categoryDescriptionById: Record<string, string> = {
+  keyframes: "Keyframe fundamentals and timing composition techniques.",
+  easing: "Easing strategies from cubic-bezier curves to stepped timing.",
+  transitions: "Transition primitives including starting-style and allow-discrete.",
+  scroll: "Scroll-linked timelines, ranges, and view timeline patterns.",
+  "view-transitions": "View Transition API techniques for state and page-like morphing.",
+  property: "Typed custom property animation with @property registration.",
+  transforms: "2D/3D transform composition, perspective, and transform origin.",
+  "motion-path": "Motion path APIs with path(), circle(), ray(), and ellipse().",
+  "clip-path": "clip-path morphs and reveal patterns with geometric shapes.",
+  filters: "Filter and backdrop-filter animation patterns.",
+  text: "Typography animation patterns from gradients to variable fonts.",
+  size: "Layout/size transition techniques, including modern and fallback approaches.",
+  color: "Color-space motion and animation composition behavior.",
 };
 
-const toCategoryId = (letter: string): CssAnimationCategoryId =>
-  `css-${letter.toLowerCase()}`;
+const toCategoryId = (id: string): CssAnimationCategoryId => `css-${id}`;
 
 export const cssAnimationCategories: CssAnimationCategory[] = demoCategories.map(
   (category) => ({
     id: toCategoryId(category.id),
-    label: `${category.id}. ${category.title}`,
-    icon: categoryIconByLetter[category.id] ?? "layers",
+    label: category.title,
+    icon: categoryIconById[category.id] ?? "layers",
     description:
-      categoryDescriptionByLetter[category.id] ??
+      categoryDescriptionById[category.id] ??
       "Native CSS animation and transition techniques.",
-    sourceCategoryId: category.id,
   }),
 );
 
@@ -71,7 +65,6 @@ const cssAnimationDemos: CssAnimationDemo[] = demoCategories.flatMap(
       description: demo.description,
       code: demo.code,
       categoryId: toCategoryId(category.id),
-      sourceCategoryId: category.id,
       Component: demo.Component,
       source: "css" as const,
       support: demo.support,

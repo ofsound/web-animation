@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+/* Live editor safelist: preload broad utility coverage for internal tooling */
+@source inline("{hover:,focus:,active:,disabled:,group-hover:,}{bg,text,border,ring,outline,stroke,fill,from,via,to}-{slate,gray,zinc,neutral,stone,red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose,black,white}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("{p,px,py,pt,pb,pl,pr,m,mx,my,mt,mb,ml,mr,gap,w,h,min-w,min-h,max-w,max-h,rounded}-{0,1,2,3,4,5,6,7,8,9,10,11,12,14,16,20,24,28,32,36,40,44,48,52,56,60,64,72,80,96,full,screen}");
+@source inline("{top,right,bottom,left,inset}-{0,1,2,3,4,5,6,7,8,9,10,12,14,16,20,24,28,32,36,40,44,48,52,56,60,64,72,80,96,auto,full}");
+@source inline("text-{xs,sm,base,lg,xl,2xl,3xl,4xl,5xl,6xl,7xl,8xl,9xl}");
+@source inline("font-{thin,extralight,light,normal,medium,semibold,bold,extrabold,black}");
+@source inline("leading-{none,tight,snug,normal,relaxed,loose,3,4,5,6,7,8,9,10}");
+@source inline("tracking-{tighter,tight,normal,wide,wider,widest}");
+@source inline("shadow-{sm,md,lg,xl,2xl,inner,none}");
+@source inline("{opacity,z}-{0,5,10,20,25,30,40,50,60,70,75,80,90,95,100}");
+@source inline("{duration,delay}-{75,100,150,200,300,500,700,1000}");
+@source inline("ease-{linear,in,out,in-out}");
+@source inline("animate-{none,spin,ping,pulse,bounce}");
+@source inline("{block,inline-block,inline,flex,inline-flex,grid,inline-grid,hidden,absolute,relative,fixed,sticky,static}");
+@source inline("{items,justify,content,self,place-items,place-content}-{start,end,center,between,around,evenly,stretch,baseline}");
+@source inline("{overflow,overflow-x,overflow-y}-{auto,hidden,clip,visible,scroll}");
+@source inline("{transition,transition-all,transition-colors,transition-opacity,transition-transform,transform,uppercase,lowercase,capitalize,truncate}");
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -371,6 +389,10 @@ body {
 /* Code block highlight */
 .code-block {
   tab-size: 2;
+}
+
+.code-editor {
+  white-space: pre;
 }
 
 @media (prefers-reduced-motion: reduce) {

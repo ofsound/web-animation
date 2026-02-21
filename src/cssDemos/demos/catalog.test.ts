@@ -8,14 +8,14 @@ describe("demo catalog", () => {
     expect(demoCount).toBe(55);
   });
 
-  it("uses unique demo ids and keeps ids aligned with category letter", () => {
+  it("uses unique demo ids and keeps ids aligned with category ids", () => {
     const ids = demoCategories.flatMap((category) => category.demos.map((demo) => demo.id));
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(ids.length);
 
     for (const category of demoCategories) {
       for (const demo of category.demos) {
-        expect(demo.id.startsWith(category.id)).toBe(true);
+        expect(demo.id.startsWith(`${category.id}-`)).toBe(true);
       }
     }
   });

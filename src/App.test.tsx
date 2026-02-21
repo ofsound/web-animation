@@ -59,14 +59,14 @@ describe("App hash navigation", () => {
   });
 
   it("switches to CSS mode from a CSS deep-link hash", async () => {
-    window.location.hash = "#A1";
+    window.location.hash = "#keyframes-basic-bounce";
     render(<App />);
 
     flushRafFrames(4);
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /A\. Core Keyframe Animations/i }),
+        screen.getByRole("heading", { name: /Core Keyframe Animations/i }),
       ).toBeInTheDocument();
     });
   });

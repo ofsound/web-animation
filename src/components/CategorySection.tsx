@@ -48,7 +48,7 @@ export function CategorySection({
       id={category.id}
       ref={sectionRef}
       aria-labelledby={`${category.id}-heading`}
-      className="scroll-mt-[7rem] p-5 pt-8 sm:p-7 sm:pt-9"
+      className="scroll-mt-8 p-5 pt-8 sm:p-7 sm:pt-9"
     >
       <header className="mb-7">
         <div className="flex flex-wrap items-center gap-2.5">
@@ -65,11 +65,11 @@ export function CategorySection({
       </header>
 
       {isLoaded ? (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {children}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-hidden>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-hidden>
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={`${category.id}-placeholder-${index}`}
