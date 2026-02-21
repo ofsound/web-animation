@@ -1,6 +1,6 @@
 export default function TextWordStagger() {
   return (
-    <p className="text-lg text-[var(--text-2)]">
+    <p className="text-lg text-text-secondary">
       {"Modern animations with Tailwind".split(" ").map((word, i) => (
         <span
           key={i}

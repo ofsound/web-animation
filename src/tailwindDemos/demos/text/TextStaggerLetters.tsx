@@ -1,6 +1,6 @@
 export default function TextStaggerLetters() {
   return (
-    <div className="flex text-3xl font-bold text-[var(--text-1)]">
+    <div className="flex text-3xl font-bold text-text-primary">
       {"ANIMATE".split("").map((char, i) => (
         <span
           key={i}

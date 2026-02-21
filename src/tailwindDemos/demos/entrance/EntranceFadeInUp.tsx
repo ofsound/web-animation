@@ -1,6 +1,6 @@
 export default function EntranceFadeInUp() {
   return (
-    <div className="animate-fade-in-up rounded-xl bg-[var(--surface-3)] p-6 text-sm text-[var(--text-2)]">
+    <div className="animate-fade-in-up rounded-xl bg-surface-card-subtle p-6 text-sm text-text-secondary">
       Sliding up ↑
     </div>
   );

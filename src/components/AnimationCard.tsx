@@ -198,9 +198,9 @@ function IconX({ className }: { className?: string }) {
 
 /* ── shared button style tokens ── */
 const ACTION_BTN_BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--color-button-neutral-border)] transition focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] focus-visible:outline-none";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-button-neutral-border transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none";
 const ACTION_BTN_HOVER =
-  "hover:border-[var(--color-button-neutral-border-hover)] hover:text-[var(--color-button-neutral-fg-hover)]";
+  "hover:border-button-neutral-border-hover hover:text-text-primary";
 
 export function AnimationCard({
   id,
@@ -379,7 +379,7 @@ export function AnimationCard({
       <article
         ref={cardRef}
         id={id}
-        className={`group flex flex-col overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-surface-card)] transition-transform duration-300 ${
+        className={`group flex flex-col overflow-hidden border border-border-subtle bg-surface-card transition-transform duration-300 ${
           isMaximized
             ? "fixed inset-y-0 right-0 left-20 z-[120] m-auto h-[min(700px,calc(100dvh-1rem))] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-72 sm:h-[min(700px,calc(100dvh-2rem))] sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
             : "relative rounded-2xl"
@@ -394,7 +394,7 @@ export function AnimationCard({
           <button
             onClick={onGoPrev}
             disabled={!canGoPrev || !onGoPrev}
-            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-[var(--color-surface-card-action)] px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-45`}
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action px-2.5 py-1.5 text-xs text-text-primary disabled:cursor-not-allowed disabled:opacity-45`}
             title="Go to previous card"
             aria-label={`Show previous card before ${title}`}
           >
@@ -406,7 +406,7 @@ export function AnimationCard({
           <button
             onClick={onGoNext}
             disabled={!canGoNext || !onGoNext}
-            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-[var(--color-surface-card-action)] px-2.5 py-1.5 text-xs text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-45`}
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action px-2.5 py-1.5 text-xs text-text-primary disabled:cursor-not-allowed disabled:opacity-45`}
             title="Go to next card"
             aria-label={`Show next card after ${title}`}
           >
@@ -421,10 +421,10 @@ export function AnimationCard({
       {onToggleMaximize ? (
         <button
           onClick={handleToggleMaximize}
-          className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} absolute top-3 right-3 z-20 bg-[var(--color-surface-card-action)] ${
+          className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} absolute top-3 right-3 z-20 bg-surface-card-action ${
             isMaximized
-              ? "px-2.5 py-1.5 text-xs text-[var(--color-text-primary)]"
-              : "p-1.5 text-[var(--color-text-secondary)]"
+              ? "px-2.5 py-1.5 text-xs text-text-primary"
+              : "p-1.5 text-text-secondary"
           }`}
           aria-label={
             isMaximized ? `Exit expanded view for ${title}` : `Expand ${title}`
@@ -443,7 +443,7 @@ export function AnimationCard({
       ) : null}
 
       <div
-        className={`relative flex items-center justify-center bg-[var(--color-demo-preview-bg)] ${
+        className={`relative flex items-center justify-center bg-demo-preview-bg ${
           isMaximized
             ? "min-h-[200px] p-5 sm:min-h-[220px] sm:p-6"
             : "min-h-[210px] p-7"
@@ -474,7 +474,7 @@ export function AnimationCard({
         </div>
         <button
           onClick={() => setReplayKey((value) => value + 1)}
-          className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} absolute right-3 bottom-3 z-20 bg-[var(--color-surface-card-action)] text-[var(--color-text-secondary)] ${
+          className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} absolute right-3 bottom-3 z-20 bg-surface-card-action text-text-secondary ${
             isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
           }`}
           title="Replay animation"
@@ -486,28 +486,24 @@ export function AnimationCard({
       </div>
 
       <div
-        className={`relative bg-gradient-to-b from-[var(--color-surface-card-header-start)] to-[var(--color-surface-card-subtle)] ${isMaximized ? "px-6 py-5" : "px-4 pt-2"}`}
+        className={`relative bg-gradient-to-b from-surface-card-header-start to-surface-card-subtle ${isMaximized ? "px-6 py-5" : "px-4 pt-2"}`}
       >
         <div className="mb-1.5">
           <h3
             className={
               isMaximized
-                ? "text-xl font-semibold text-[var(--color-text-primary)]"
-                : "text-base font-semibold text-[var(--color-text-primary)]"
+                ? "text-xl font-semibold text-text-primary"
+                : "text-base font-semibold text-text-primary"
             }
           >
             {title}
           </h3>
         </div>
-        <p
-          className={
-            isMaximized
-              ? "text-sm leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
-              : "text-xs leading-relaxed text-[var(--color-text-secondary)]"
-          }
-        >
-          {description}
-        </p>
+        {isMaximized && (
+          <p className="text-sm leading-relaxed text-text-secondary sm:text-base">
+            {description}
+          </p>
+        )}
       </div>
 
       <div
@@ -515,7 +511,7 @@ export function AnimationCard({
         className={`code-panel relative mt-3 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden ${
           isMaximized
             ? "rounded-b-3xl p-6 pt-12"
-            : "max-h-[5rem] rounded-b-2xl px-4"
+            : "max-h-[6.5rem] rounded-b-2xl px-4 pb-4"
         }`}
         style={{
           background:
@@ -526,7 +522,7 @@ export function AnimationCard({
           <button
             onClick={() => setLiveCode(metadata.code)}
             disabled={!isCodeDirty}
-            className={`${ACTION_BTN_BASE} bg-[var(--color-button-neutral-bg)] text-[var(--color-button-neutral-fg)] enabled:hover:border-[var(--color-button-neutral-border-hover)] enabled:hover:bg-[var(--color-button-neutral-bg-hover)] enabled:hover:text-[var(--color-button-neutral-fg-hover)] disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`${ACTION_BTN_BASE} bg-button-neutral-bg text-text-secondary enabled:hover:border-button-neutral-border-hover enabled:hover:bg-button-neutral-bg-hover enabled:hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${
               isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
             }`}
             title="Reset code"
@@ -537,9 +533,9 @@ export function AnimationCard({
           </button>
           <button
             onClick={handleCopy}
-            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-[var(--color-button-neutral-bg)] text-[var(--color-button-neutral-fg)] ${
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-button-neutral-bg text-text-secondary ${
               isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
-            } ${copyState === "copied" ? "border-[var(--color-status-success)]/50! text-[var(--color-status-success)]!" : copyState === "failed" ? "border-[var(--color-status-error)]/50! text-[var(--color-status-error)]!" : ""}`}
+            } ${copyState === "copied" ? "border-status-success/50! text-status-success!" : copyState === "failed" ? "border-status-error/50! text-status-error!" : ""}`}
             title={
               copyState === "copied"
                 ? "Copied!"
@@ -571,7 +567,7 @@ export function AnimationCard({
           Live code editor for {title}
         </label>
         <div
-          className={`rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-code)] shadow-inner focus-within:border-[var(--color-accent-brand)] focus-within:ring-1 focus-within:ring-[var(--color-accent-brand)] ${
+          className={`rounded-lg border border-border-strong bg-surface-code shadow-inner focus-within:border-accent-brand focus-within:ring-1 focus-within:ring-accent-brand ${
             isMaximized ? "p-3" : "p-2"
           }`}
         >
@@ -588,7 +584,7 @@ export function AnimationCard({
             }}
             height={isMaximized ? "22rem" : "4.25rem"}
             maxHeight={isMaximized ? "22rem" : "4.25rem"}
-            className={`code-block code-editor min-h-0 w-full flex-1 overflow-auto bg-transparent pr-1 font-mono leading-relaxed text-[var(--color-text-tertiary)] focus-visible:outline-none ${
+            className={`code-block code-editor min-h-0 w-full flex-1 overflow-auto bg-transparent pr-1 font-mono leading-relaxed text-text-tertiary focus-visible:outline-none ${
               isMaximized ? "text-sm" : "text-[10px]"
             }`}
             aria-labelledby={`${id}-code-editor-label`}

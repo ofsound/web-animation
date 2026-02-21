@@ -32,13 +32,6 @@
   --font-sans: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Demo-facing utility colors retained for backward compatibility. */
-  --color-accent: theme(colors.indigo.400);
-  --color-cyan-glow: theme(colors.cyan.400);
-  --color-rose-glow: theme(colors.rose.400);
-  --color-amber-glow: theme(colors.amber.400);
-  --color-emerald-glow: theme(colors.emerald.400);
-
   /* Unified semantic color system for app chrome. */
   --color-app-bg: light-dark(theme(colors.zinc.50), theme(colors.zinc.950));
   --color-app-main: light-dark(theme(colors.white), theme(colors.zinc.900));
@@ -174,10 +167,52 @@
     theme(colors.green.700),
     theme(colors.green.400)
   );
+  --color-status-warning: light-dark(
+    theme(colors.amber.700),
+    theme(colors.amber.400)
+  );
   --color-status-error: light-dark(
     theme(colors.red.500),
     theme(colors.red.400)
   );
+
+  /* Glow/shadow color-mix tokens for semantic shadow utilities. */
+  --color-accent-glow-strong: color-mix(
+    in oklch,
+    var(--color-accent-brand) 40%,
+    transparent
+  );
+  --color-accent-glow: color-mix(
+    in oklch,
+    var(--color-accent-brand) 30%,
+    transparent
+  );
+  --color-accent-glow-subtle: color-mix(
+    in oklch,
+    var(--color-accent-brand) 18%,
+    transparent
+  );
+
+  /* Semantic gradient for text shimmer (4-stop, 110deg). */
+  --background-image-shimmer-text: linear-gradient(
+    110deg,
+    var(--color-text-tertiary) 0%,
+    var(--color-text-secondary) 35%,
+    var(--color-text-tertiary) 60%,
+    var(--color-text-secondary) 100%
+  );
+
+  /* Semantic shadow utilities using glow tokens. */
+  --shadow-glow-strong: 0 0 30px var(--color-accent-glow-strong);
+  --shadow-glow: 0 20px 60px -15px var(--color-accent-glow);
+  --shadow-glow-subtle: 0 0 20px var(--color-accent-glow-subtle);
+
+  /* Demo-facing utility aliases mapped to semantic tokens. */
+  --color-accent: var(--color-accent-brand);
+  --color-cyan-glow: var(--color-accent-brand-secondary);
+  --color-rose-glow: var(--color-status-error);
+  --color-amber-glow: var(--color-status-warning);
+  --color-emerald-glow: var(--color-status-success);
 
   --color-scrollbar-track: light-dark(
     theme(colors.zinc.200),
@@ -395,26 +430,26 @@ body {
   0%,
   100% {
     box-shadow:
-      0 0 5px color-mix(in oklch, theme(colors.violet.400) 30%, transparent),
-      0 0 20px color-mix(in oklch, theme(colors.violet.400) 10%, transparent);
+      0 0 5px color-mix(in oklch, var(--color-accent-brand) 30%, transparent),
+      0 0 20px color-mix(in oklch, var(--color-accent-brand) 10%, transparent);
   }
   50% {
     box-shadow:
-      0 0 20px color-mix(in oklch, theme(colors.violet.400) 60%, transparent),
-      0 0 60px color-mix(in oklch, theme(colors.violet.400) 20%, transparent);
+      0 0 20px color-mix(in oklch, var(--color-accent-brand) 60%, transparent),
+      0 0 60px color-mix(in oklch, var(--color-accent-brand) 20%, transparent);
   }
 }
 @keyframes text-glow {
   0%,
   100% {
     text-shadow:
-      0 0 8px color-mix(in oklch, theme(colors.violet.400) 40%, transparent),
-      0 0 16px color-mix(in oklch, theme(colors.violet.400) 20%, transparent);
+      0 0 8px color-mix(in oklch, var(--color-accent-brand) 40%, transparent),
+      0 0 16px color-mix(in oklch, var(--color-accent-brand) 20%, transparent);
   }
   50% {
     text-shadow:
-      0 0 12px color-mix(in oklch, theme(colors.violet.400) 70%, transparent),
-      0 0 32px color-mix(in oklch, theme(colors.violet.400) 40%, transparent);
+      0 0 12px color-mix(in oklch, var(--color-accent-brand) 70%, transparent),
+      0 0 32px color-mix(in oklch, var(--color-accent-brand) 40%, transparent);
   }
 }
 @keyframes pulse-ring {
@@ -607,7 +642,7 @@ body {
     border-color: transparent;
   }
   50% {
-    border-color: theme(colors.violet.400);
+    border-color: currentColor;
   }
 }
 @keyframes morph {

@@ -22,8 +22,8 @@ export function CategorySection({
   const [isLoaded, setIsLoaded] = useState(eager);
   const sectionSurfaceClass =
     surfaceTone === "even"
-      ? "bg-[var(--color-surface-section-even)]"
-      : "bg-[var(--color-surface-section-odd)]";
+      ? "bg-surface-section-even"
+      : "bg-surface-section-odd";
   const cardGridStyle = {
     gridTemplateColumns: "repeat(auto-fit, minmax(0, 400px))",
     justifyContent: "center",
@@ -68,7 +68,7 @@ export function CategorySection({
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={`${category.id}-placeholder-${index}`}
-                className="h-[280px] rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-card-subtle)]"
+                className="h-[280px] rounded-2xl border border-border-subtle bg-surface-card-subtle"
               />
             ))}
           </div>

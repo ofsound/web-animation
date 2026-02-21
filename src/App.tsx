@@ -415,32 +415,41 @@ function App() {
   ]);
 
   return (
-    <div className="min-h-screen text-[var(--color-text-primary)]">
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-20 flex-col border-r border-[var(--color-shell-sidebar-border)] bg-[var(--color-shell-sidebar-bg)] backdrop-blur-xl sm:w-72">
-        <div className="border-b border-[var(--color-shell-sidebar-border)] px-3 py-4 sm:px-5">
+    <div className="min-h-screen text-text-primary">
+      <aside className="fixed inset-y-0 left-0 z-50 flex w-20 flex-col border-r border-shell-sidebar-border bg-shell-sidebar-bg backdrop-blur-xl sm:w-72">
+        <div className="border-b border-shell-sidebar-border px-3 py-4 sm:px-5">
           <div>
-            <h1 className="text-center text-base leading-tight font-black tracking-[-0.02em] text-balance text-[var(--color-text-primary)] sm:text-left sm:text-2xl">
+            <h1 className="text-center text-base leading-tight font-black tracking-[-0.02em] text-balance text-text-primary sm:text-left sm:text-2xl">
               Web Animation
             </h1>
-            <p
-              className="mt-0.5 hidden font-mono text-base tracking-wide text-[var(--color-text-secondary)] sm:block"
-              data-source-file="src/App.tsx"
-              data-source-line="98"
-            >
-              Feb 2026
-            </p>
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <p
+                className="hidden font-mono text-base tracking-wide text-text-secondary sm:block"
+                data-source-file="src/App.tsx"
+                data-source-line="98"
+              >
+                Feb 2026
+              </p>
+              <button
+                onClick={toggleTheme}
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-button-neutral-border bg-button-neutral-bg text-base text-text-secondary transition hover:border-button-neutral-border-hover hover:bg-button-neutral-bg-hover hover:text-text-primary"
+                aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              >
+                {theme === "dark" ? "☀" : "☾"}
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="border-b border-[var(--color-shell-sidebar-border)] px-2 py-3 sm:px-4">
+        <div className="border-b border-shell-sidebar-border px-2 py-3 sm:px-4">
           <div
-            className="relative flex rounded-full border border-[var(--color-button-neutral-border)] bg-[var(--color-menu-toggle-track)] p-0.5"
+            className="relative flex rounded-lg border border-button-neutral-border bg-menu-toggle-track p-1"
             role="radiogroup"
             aria-label="Gallery mode"
           >
-            {/* sliding pill indicator */}
+            {/* sliding indicator */}
             <span
-              className="absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-full bg-[var(--color-menu-toggle-indicator)] transition-transform duration-300 ease-[cubic-bezier(.4,0,.2,1)]"
+              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-md bg-menu-toggle-indicator transition-transform duration-300 ease-[cubic-bezier(.4,0,.2,1)]"
               style={{
                 transform:
                   galleryMode === "css" ? "translateX(100%)" : "translateX(0)",
@@ -455,10 +464,10 @@ function App() {
                 onClick={() => {
                   setGalleryModeWithTransition(mode);
                 }}
-                className={`relative z-10 flex-1 rounded-full py-1.5 text-center text-[11px] font-black tracking-widest uppercase transition-colors duration-200 ${
+                className={`relative z-10 flex-1 rounded-md py-2.5 text-center text-sm font-bold tracking-wide transition-colors duration-200 ${
                   galleryMode === mode
-                    ? "text-[var(--color-menu-toggle-active-fg)]"
-                    : "text-[var(--color-menu-toggle-inactive-fg)] hover:text-[var(--color-text-primary)]"
+                    ? "text-text-inverse"
+                    : "text-text-tertiary hover:text-text-primary"
                 }`}
               >
                 {mode === "tailwind" ? (
@@ -489,8 +498,8 @@ function App() {
                 }}
                 className={`flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-sm font-semibold tracking-wide transition-all sm:justify-start sm:px-3 ${
                   isActive
-                    ? "border-[var(--color-menu-item-border-active)] bg-[var(--color-menu-item-bg-active)] text-[var(--color-text-primary)]"
-                    : "border-[var(--color-button-neutral-border)] bg-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-menu-item-border-hover)] hover:text-[var(--color-text-primary)]"
+                    ? "border-menu-item-border-active bg-menu-item-bg-active text-text-primary"
+                    : "border-button-neutral-border bg-transparent text-text-secondary hover:border-menu-item-border-hover hover:text-text-primary"
                 }`}
                 aria-current={isActive ? "true" : undefined}
               >
@@ -502,19 +511,6 @@ function App() {
             );
           })}
         </nav>
-
-        <div className="border-t border-[var(--color-shell-sidebar-border)] px-2 py-3 sm:px-3">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--color-button-neutral-border)] bg-[var(--color-button-neutral-bg)] px-2 py-2 text-sm tracking-wide text-[var(--color-button-neutral-fg)] transition hover:border-[var(--color-button-neutral-border-hover)] hover:bg-[var(--color-button-neutral-bg-hover)] hover:text-[var(--color-button-neutral-fg-hover)] sm:justify-start sm:px-3"
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-          >
-            <span className="sm:hidden">{theme === "dark" ? "☀" : "☾"}</span>
-            <span className="hidden sm:inline">
-              {theme === "dark" ? "☀ Light" : "☾ Dark"}
-            </span>
-          </button>
-        </div>
       </aside>
 
       {activeMaximizedDemoId && (
@@ -529,7 +525,7 @@ function App() {
         />
       )}
 
-      <main className="relative ml-20 bg-[var(--color-app-main)] pt-7 pb-24 sm:ml-72 sm:pt-10">
+      <main className="relative ml-20 bg-app-main pt-7 pb-24 sm:ml-72 sm:pt-10">
         <div className={activeMaximizedDemoId ? "" : "mode-gallery-content"}>
           {categories.map((category, index) => {
             const demos = demosByCategory.get(category.id) ?? [];
@@ -571,8 +567,8 @@ function App() {
         </div>
       </main>
 
-      <footer className="ml-20 border-t border-[var(--color-divider)] py-8 text-center sm:ml-72">
-        <p className="font-mono text-xs tracking-wide text-[var(--color-text-tertiary)]">
+      <footer className="ml-20 border-t border-divider py-8 text-center sm:ml-72">
+        <p className="font-mono text-xs tracking-wide text-text-tertiary">
           animation.csstune.com
         </p>
       </footer>
