@@ -4,7 +4,7 @@ import {
   animationDemos,
   type AnimationCategoryId,
 } from "../../data/animations";
-import type { Demo } from "../../types/demo";
+import type { Category, Demo } from "../../types/demo";
 import {
   HoverScaleGlow,
   HoverGradientBorder,
@@ -113,7 +113,7 @@ const componentById: Record<string, ComponentType> = {
 
 export type TailwindDemo = Demo<AnimationCategoryId, "tailwind">;
 
-export const tailwindDemos: TailwindDemo[] = animationDemos.flatMap((demo) => {
+const tailwindDemos: TailwindDemo[] = animationDemos.flatMap((demo) => {
   const Component = componentById[demo.id];
   if (!Component) return [];
 
@@ -131,7 +131,7 @@ export const tailwindDemos: TailwindDemo[] = animationDemos.flatMap((demo) => {
   ];
 });
 
-export const tailwindCategories = animationCategories;
+export const tailwindCategories: Category<AnimationCategoryId>[] = animationCategories;
 
 export const tailwindDemosByCategory = new Map<AnimationCategoryId, TailwindDemo[]>(
   tailwindCategories.map((category) => [category.id, []]),

@@ -1,2 +1,0 @@
-export declare const code = "// Wrap any state update in startViewTransition()\n// Elements with view-transition-name get a smooth cross-fade automatically\n\nfunction switchTab(id: string) {\n  if ('startViewTransition' in document) {\n    document.startViewTransition(() => setTab(id));\n  } else {\n    setTab(id);   // graceful fallback\n  }\n}\n\n/* CSS: give the morphing element a unique name */\n.content {\n  view-transition-name: e1-content;\n}";
-export default function E1SPASwap(): import("react/jsx-runtime").JSX.Element;

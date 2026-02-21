@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 import type { Category } from "../types/demo";
 
-export type { CategoryIconName } from "../types/demo";
 export type AnimationCategoryId = "hover" | "entrance" | "loading" | "text" | "complex";
-export type AnimationDifficulty = "Basic" | "Intermediate" | "Advanced";
+type AnimationDifficulty = "Basic" | "Intermediate" | "Advanced";
 
-export interface AnimationDemo {
+interface AnimationDemo {
   id: string;
   title: string;
   description: string;
@@ -16,7 +15,7 @@ export interface AnimationDemo {
   preview: (() => ReactNode) | null;
 }
 
-export interface AnimationCategory extends Category {
+interface AnimationCategory extends Category {
   id: AnimationCategoryId;
 }
 
@@ -718,18 +717,3 @@ export const animationDemos: AnimationDemo[] = [
     "preview": null
   }
 ] as AnimationDemo[];
-
-export const animationDemoMetaById = new Map(
-  animationDemos.map((demo) => [demo.id, demo]),
-);
-
-export const demoCategoryById = new Map(
-  animationDemos.map((demo) => [demo.id, demo.category]),
-);
-
-export const categoryCounts = new Map<AnimationCategoryId, number>(
-  animationCategories.map((category) => [
-    category.id,
-    animationDemos.filter((demo) => demo.category === category.id).length,
-  ]),
-);

@@ -1,2 +1,0 @@
-export declare const code = "/* Pure CSS \u2014 no JavaScript involved */\n.progress-bar {\n  position: sticky;\n  top: 0;\n  width: 100%;\n  height: 4px;\n  transform-origin: left;\n\n  animation: progress linear both;\n  animation-timeline: scroll(nearest block); /* tracks the scroll container */\n}\n\n@keyframes progress {\n  from { transform: scaleX(0); }\n  to   { transform: scaleX(1); }\n}";
-export default function D1ProgressBar(): import("react/jsx-runtime").JSX.Element;

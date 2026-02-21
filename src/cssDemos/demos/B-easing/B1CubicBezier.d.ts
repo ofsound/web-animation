@@ -1,2 +1,0 @@
-export declare const code = "/* Same @keyframes, different timing functions */\n@keyframes race {\n  from { left: 4px; }\n  to   { left: calc(100% - 20px); }\n}\n\n.ease    { animation-timing-function: ease; }\n.ease-in { animation-timing-function: ease-in; }\n.ease-out{ animation-timing-function: ease-out; }\n/* custom overshoot \u2014 note x2 can exceed 1 for elastic feel */\n.bounce  { animation-timing-function: cubic-bezier(.22,.99,.44,1.35); }";
-export default function B1CubicBezier(): import("react/jsx-runtime").JSX.Element;

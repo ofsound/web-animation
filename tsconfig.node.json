@@ -10,7 +10,7 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "emitDeclarationOnly": true,
+    "noEmit": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",

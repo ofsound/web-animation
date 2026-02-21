@@ -19,7 +19,7 @@ export type GalleryMode = "tailwind" | "css";
 
 export type DemoEntry = Demo;
 
-export interface GalleryData<
+interface GalleryData<
   TCategoryId extends string = string,
   TDemo extends Demo<TCategoryId> = Demo<TCategoryId>,
 > {
@@ -29,9 +29,9 @@ export interface GalleryData<
   categoryCounts: Map<TCategoryId, number>;
 }
 
-export type TailwindGalleryData = GalleryData<AnimationCategoryId, TailwindDemo>;
-export type CssGalleryData = GalleryData<CssAnimationCategoryId, CssAnimationDemo>;
-export type AnyGalleryData = TailwindGalleryData | CssGalleryData;
+type TailwindGalleryData = GalleryData<AnimationCategoryId, TailwindDemo>;
+type CssGalleryData = GalleryData<CssAnimationCategoryId, CssAnimationDemo>;
+type AnyGalleryData = TailwindGalleryData | CssGalleryData;
 
 const tailwindGalleryData: TailwindGalleryData = {
   categories: tailwindCategories,

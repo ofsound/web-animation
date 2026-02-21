@@ -1,2 +1,0 @@
-export declare const code = "@keyframes slide {\n  from { left: 4px; }\n  to   { left: calc(100% - 20px); }\n}\n\n/* All share the same @keyframes, only direction differs */\n.normal           { animation-direction: normal; }\n.reverse          { animation-direction: reverse; }\n.alternate        { animation-direction: alternate; }\n.alternate-reverse{ animation-direction: alternate-reverse; }";
-export default function A4Direction(): import("react/jsx-runtime").JSX.Element;

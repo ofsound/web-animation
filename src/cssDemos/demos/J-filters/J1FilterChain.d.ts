@@ -1,2 +1,0 @@
-export declare const code = "/* Multiple filter functions chain left-to-right.\n   Each function modifies the result of the previous one. */\n\n.element {\n  filter:\n    blur(2px)\n    brightness(1.2)\n    saturate(1.8)\n    contrast(1.1);\n}\n\n/* Individual functions can be animated too: */\n@keyframes glow {\n  from { filter: brightness(1) drop-shadow(0 0 0px oklch(68% .28 260)); }\n  to   { filter: brightness(1.3) drop-shadow(0 0 12px oklch(68% .28 260)); }\n}";
-export default function J1FilterChain(): import("react/jsx-runtime").JSX.Element;

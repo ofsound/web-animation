@@ -1,2 +1,0 @@
-export declare const code = "/* Each avatar gets a UNIQUE view-transition-name.\n   When the detail view renders the same name, the browser morphs it. */\n\n// List row avatar\n<div\n  style={{ viewTransitionName: 'avatar-' + person.id }}\n  className={styles.rowAvatar}\n/>\n\n// Detail view \u2014 same name \u2192 browser connects them for position/size morph\n<div\n  style={{ viewTransitionName: 'avatar-' + selected.id }}\n  className={styles.detailAvatar}\n/>";
-export default function E2HeroMorph(): import("react/jsx-runtime").JSX.Element;

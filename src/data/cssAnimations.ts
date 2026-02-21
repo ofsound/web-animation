@@ -7,7 +7,7 @@ import type {
 
 export type CssAnimationCategoryId = `css-${string}`;
 
-export interface CssAnimationCategory extends Category {
+interface CssAnimationCategory extends Category {
   id: CssAnimationCategoryId;
   sourceCategoryId: string;
 }
@@ -63,7 +63,7 @@ export const cssAnimationCategories: CssAnimationCategory[] = demoCategories.map
   }),
 );
 
-export const cssAnimationDemos: CssAnimationDemo[] = demoCategories.flatMap(
+const cssAnimationDemos: CssAnimationDemo[] = demoCategories.flatMap(
   (category) =>
     category.demos.map((demo) => ({
       id: demo.id,
@@ -76,17 +76,6 @@ export const cssAnimationDemos: CssAnimationDemo[] = demoCategories.flatMap(
       source: "css" as const,
       support: demo.support,
     })),
-);
-
-export const cssAnimationDemoMetaById = new Map(
-  cssAnimationDemos.map((demo) => [
-    demo.id,
-    {
-      title: demo.title,
-      description: demo.description,
-      code: demo.code,
-    },
-  ]),
 );
 
 export const cssDemosByCategory = new Map<CssAnimationCategoryId, CssAnimationDemo[]>(

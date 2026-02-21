@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { SupportLevel } from "../components/SupportBadge";
+import type { SupportLevel } from "../../types/demo";
 import {
 A1,
   A1Code,
@@ -113,7 +113,7 @@ A1,
   M2Code,
 } from "./index";
 
-export interface DemoDefinition {
+interface DemoDefinition {
   id: string;
   title: string;
   description: string;
@@ -122,7 +122,7 @@ export interface DemoDefinition {
   Component: ComponentType;
 }
 
-export interface DemoCategory {
+interface DemoCategory {
   id: string;
   title: string;
   demos: DemoDefinition[];

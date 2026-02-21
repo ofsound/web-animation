@@ -1,2 +1,0 @@
-export declare const code = "/* No IntersectionObserver needed \u2014 pure CSS scroll-driven */\n.card {\n  animation: fadeUp linear both;\n  animation-timeline: view(block);          /* tracks element in viewport */\n  animation-range: entry 0% entry 30%;      /* animate while entering */\n}\n\n@keyframes fadeUp {\n  from { opacity: 0; transform: translateY(16px); }\n  to   { opacity: 1; transform: translateY(0); }\n}";
-export default function D2FadeOnScroll(): import("react/jsx-runtime").JSX.Element;

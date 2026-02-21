@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 
 type CopyResult = "success" | "error";
 
-export interface DemoMetadata {
+interface DemoMetadata {
   title: string;
   description: string;
   code: string;
