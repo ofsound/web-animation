@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   assertNoDuplicateDemoIdsByMode,
+  getDemoRoutePath,
   getGalleryData,
+  resolveDemoFromRoute,
   resolveHashToModeAndTarget,
+  resolveLegacyHashToRoute,
+  toDemoRouteSlug,
 } from "./demoRegistry";
 
 const modes = ["tailwind", "css"] as const;
@@ -47,6 +51,54 @@ describe("demoRegistry", () => {
         expect(countsByCategory.get(category.id)).toBe(expectedCount);
       }
     }
+  });
+
+  it("builds and resolves canonical demo route slugs", () => {
+    const slug = toDemoRouteSlug("Gradient Border Spin", "hover-gradient-border");
+    expect(slug).toBe("gradient-border-spin~hover-gradient-border");
+
+    expect(resolveDemoFromRoute("tailwind", slug)).toEqual({
+      demoId: "hover-gradient-border",
+      canonicalSlug: "gradient-border-spin~hover-gradient-border",
+    });
+  });
+
+  it("canonicalizes stale title slugs while keeping stable demo id", () => {
+    const resolved = resolveDemoFromRoute(
+      "tailwind",
+      "old-share-title~hover-gradient-border",
+    );
+
+    expect(resolved).toEqual({
+      demoId: "hover-gradient-border",
+      canonicalSlug: "gradient-border-spin~hover-gradient-border",
+    });
+  });
+
+  it("rejects invalid route slugs", () => {
+    expect(resolveDemoFromRoute("tailwind", "hover-gradient-border")).toBeNull();
+    expect(resolveDemoFromRoute("tailwind", "anything~not-a-demo")).toBeNull();
+    expect(
+      resolveDemoFromRoute("css", "gradient-border-spin~hover-gradient-border"),
+    ).toBeNull();
+  });
+
+  it("converts legacy hash values into route paths", () => {
+    expect(resolveLegacyHashToRoute("hover-scale-glow")).toEqual({
+      kind: "demo",
+      mode: "tailwind",
+      demoId: "hover-scale-glow",
+      path: getDemoRoutePath("tailwind", "hover-scale-glow"),
+    });
+
+    expect(resolveLegacyHashToRoute("hover")).toEqual({
+      kind: "section",
+      mode: "tailwind",
+      sectionId: "hover",
+      path: "/tailwind",
+    });
+
+    expect(resolveLegacyHashToRoute("not-a-real-id")).toBeNull();
   });
 
   it("throws when duplicate demo IDs exist across gallery modes", () => {

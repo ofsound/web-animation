@@ -62,7 +62,7 @@
     theme(colors.neutral.900)
   );
   --color-surface-card-header-start: light-dark(
-    theme(colors.white),
+    theme(colors.zinc.100),
     theme(colors.zinc.800)
   );
   --color-surface-card-action: light-dark(
@@ -312,7 +312,7 @@ body {
 
 ::view-transition-old(gallery-main-content),
 ::view-transition-new(gallery-main-content) {
-  animation-duration: 460ms;
+  animation-duration: 300ms;
   animation-timing-function: ease;
   mix-blend-mode: normal;
 }
@@ -340,9 +340,10 @@ body {
   pointer-events: none;
 }
 
-:root.is-programmatic-scrolling *,
-:root.is-programmatic-scrolling *::before,
-:root.is-programmatic-scrolling *::after {
+:root.is-programmatic-scrolling .animation-demo-surface,
+:root.is-programmatic-scrolling .animation-demo-surface *,
+:root.is-programmatic-scrolling .animation-demo-surface *::before,
+:root.is-programmatic-scrolling .animation-demo-surface *::after {
   animation-play-state: paused !important;
   transition-duration: 0ms !important;
   transition-delay: 0ms !important;

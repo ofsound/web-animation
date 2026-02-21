@@ -24,13 +24,10 @@ export function CategorySection({
     surfaceTone === "even"
       ? "bg-surface-section-even"
       : "bg-surface-section-odd";
-  const cardGridStyle = {
-    gridTemplateColumns: "repeat(auto-fit, minmax(0, 400px))",
-    justifyContent: "center",
-  } as const;
+  const shouldRenderContent = eager || isLoaded;
 
   useEffect(() => {
-    if (isLoaded || !sectionRef.current) return;
+    if (shouldRenderContent || !sectionRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -49,22 +46,22 @@ export function CategorySection({
     observer.observe(sectionRef.current);
 
     return () => observer.disconnect();
-  }, [isLoaded]);
+  }, [shouldRenderContent]);
 
   return (
     <section
       id={category.id}
       ref={sectionRef}
       aria-label={category.label}
-      className={`scroll-mt-8 py-8 sm:py-10 ${sectionSurfaceClass}`}
+      className={`py-12 sm:py-14 ${sectionSurfaceClass}`}
     >
       <div className="mx-auto w-full max-w-[1600px] px-5 sm:px-7 lg:px-10 2xl:px-14">
-        {isLoaded ? (
-          <div className="grid gap-7" style={cardGridStyle}>
+        {shouldRenderContent ? (
+          <div className="grid grid-cols-1 gap-7 xl:grid-cols-2 2xl:grid-cols-3">
             {children}
           </div>
         ) : (
-          <div className="grid gap-4" style={cardGridStyle} aria-hidden>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3" aria-hidden>
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={`${category.id}-placeholder-${index}`}

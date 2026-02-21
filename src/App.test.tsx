@@ -1,40 +1,99 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import App from "./App";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { getDemoRoutePath } from "./data/demoRegistry";
 
-function renderApp() {
+vi.mock("@uiw/react-codemirror", () => ({
+  __esModule: true,
+  default: ({
+    id,
+    value,
+    onChange,
+    className,
+    "aria-labelledby": ariaLabelledBy,
+    "aria-describedby": ariaDescribedBy,
+  }: {
+    id?: string;
+    value?: string;
+    onChange?: (nextValue: string) => void;
+    className?: string;
+    "aria-labelledby"?: string;
+    "aria-describedby"?: string;
+  }) => (
+    <textarea
+      id={id}
+      value={value ?? ""}
+      onChange={(event) => onChange?.(event.target.value)}
+      className={className}
+      aria-labelledby={ariaLabelledBy}
+      aria-describedby={ariaDescribedBy}
+    />
+  ),
+}));
+
+function LocationPathProbe() {
+  const location = useLocation();
+  return <output data-testid="location-path">{location.pathname}</output>;
+}
+
+function renderApp(initialPath = "/tailwind") {
   return render(
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>,
+    <MemoryRouter initialEntries={[initialPath]}>
+      <ThemeProvider>
+        <App />
+        <LocationPathProbe />
+      </ThemeProvider>
+    </MemoryRouter>,
   );
 }
 
 class IntersectionObserverMock {
-  observe() {}
+  private readonly callback: IntersectionObserverCallback;
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+  }
+
+  root = null;
+  rootMargin = "";
+  thresholds = [];
+  takeRecords = () => [];
+
+  observe(target: Element) {
+    if (!(target instanceof HTMLElement) || target.tagName !== "SECTION") {
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          boundingClientRect: rect,
+          intersectionRatio: 1,
+          intersectionRect: rect,
+          isIntersecting: true,
+          rootBounds: null,
+          target,
+          time: 0,
+        } as IntersectionObserverEntry,
+      ],
+      this as unknown as IntersectionObserver,
+    );
+  }
   unobserve() {}
   disconnect() {}
 }
 
-const rafQueue: FrameRequestCallback[] = [];
-let rafTimestamp = 0;
-let scrollIntoViewMock: ReturnType<typeof vi.fn>;
 let scrollToMock: ReturnType<typeof vi.fn>;
 
-function flushRafFrames(frameCount = 1): void {
-  for (let index = 0; index < frameCount; index += 1) {
-    rafTimestamp += 16;
-    const callbacks = rafQueue.splice(0, rafQueue.length);
-    callbacks.forEach((callback) => callback(rafTimestamp));
-  }
+function getPathname() {
+  return screen.getByTestId("location-path").textContent;
 }
 
-describe("App hash navigation", () => {
+describe("App routing", () => {
   beforeEach(() => {
     window.location.hash = "";
-    rafTimestamp = 0;
-    scrollIntoViewMock = vi.fn();
     scrollToMock = vi.fn((position: ScrollToOptions | number, y?: number) => {
       const nextScrollY =
         typeof position === "number"
@@ -49,11 +108,6 @@ describe("App hash navigation", () => {
       });
     });
 
-    Object.defineProperty(Element.prototype, "scrollIntoView", {
-      configurable: true,
-      writable: true,
-      value: scrollIntoViewMock,
-    });
     Object.defineProperty(window, "scrollY", {
       configurable: true,
       writable: true,
@@ -79,65 +133,57 @@ describe("App hash navigation", () => {
         dispatchEvent: vi.fn(),
       }),
     );
-    vi.stubGlobal(
-      "requestAnimationFrame",
-      vi.fn((callback: FrameRequestCallback) => {
-        rafQueue.push(callback);
-        return rafQueue.length;
-      }),
-    );
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
   });
 
   afterEach(() => {
-    rafQueue.splice(0, rafQueue.length);
     vi.unstubAllGlobals();
   });
 
-  it("switches to CSS mode from a CSS deep-link hash", async () => {
-    window.location.hash = "#keyframes-basic-bounce";
-    renderApp();
+  it("opens a routed CSS demo in maximized mode", async () => {
+    const path = getDemoRoutePath("css", "keyframes-basic-bounce");
+    renderApp(path);
 
-    flushRafFrames(4);
-
-    await waitFor(() => {
+    await waitFor(() =>
       expect(screen.getByRole("radio", { name: /CSS/i })).toHaveAttribute(
         "aria-checked",
         "true",
-      );
-    });
-  });
-
-  it("keeps only the latest hash navigation when updates happen rapidly", () => {
-    renderApp();
-    flushRafFrames(2);
-
-    window.location.hash = "#hover-scale-glow";
-    window.dispatchEvent(new Event("hashchange"));
-    window.location.hash = "#loading";
-    window.dispatchEvent(new Event("hashchange"));
-
-    flushRafFrames(80);
-
-    expect(scrollToMock).toHaveBeenCalled();
-    expect(scrollIntoViewMock).not.toHaveBeenCalled();
-  });
-
-  it("navigates maximized cards with all arrow keys", async () => {
-    renderApp();
-    flushRafFrames(2);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /Expand Scale & Glow/i }),
+      ),
     );
 
     expect(
       screen.getByRole("button", {
-        name: /Exit expanded view for Scale & Glow/i,
+        name: /Exit expanded view for Basic @keyframes Bounce/i,
       }),
     ).toBeInTheDocument();
+    expect(getPathname()).toBe(path);
+  });
 
-    fireEvent.keyDown(window, { key: "ArrowRight" });
+  it("closes a routed maximized demo back to mode root", async () => {
+    renderApp(getDemoRoutePath("css", "keyframes-basic-bounce"));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Exit expanded view for Basic @keyframes Bounce/i,
+      }),
+    );
+
+    await waitFor(() => expect(getPathname()).toBe("/css"));
+    expect(
+      screen.queryByRole("button", {
+        name: /Exit expanded view for Basic @keyframes Bounce/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("updates URL slug when navigating next/prev in maximized mode", async () => {
+    renderApp(getDemoRoutePath("tailwind", "hover-scale-glow"));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Show next card after Scale & Glow/i,
+      }),
+    );
+
     await waitFor(() =>
       expect(
         screen.getByRole("button", {
@@ -145,32 +191,79 @@ describe("App hash navigation", () => {
         }),
       ).toBeInTheDocument(),
     );
-
-    fireEvent.keyDown(window, { key: "ArrowDown" });
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", {
-          name: /Exit expanded view for 3D Tilt Card/i,
-        }),
-      ).toBeInTheDocument(),
+    expect(getPathname()).toBe(
+      getDemoRoutePath("tailwind", "hover-gradient-border"),
     );
 
-    fireEvent.keyDown(window, { key: "ArrowUp" });
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", {
-          name: /Exit expanded view for Gradient Border Spin/i,
-        }),
-      ).toBeInTheDocument(),
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Show previous card before Gradient Border Spin/i,
+      }),
     );
 
-    fireEvent.keyDown(window, { key: "ArrowLeft" });
     await waitFor(() =>
       expect(
         screen.getByRole("button", {
           name: /Exit expanded view for Scale & Glow/i,
         }),
       ).toBeInTheDocument(),
+    );
+    expect(getPathname()).toBe(getDemoRoutePath("tailwind", "hover-scale-glow"));
+  });
+
+  it("crosses from tailwind to css when advancing past last tailwind demo", async () => {
+    renderApp(getDemoRoutePath("tailwind", "complex-heartbeat"));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Show next card after Heartbeat/i,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("radio", { name: /CSS/i })).toHaveAttribute(
+        "aria-checked",
+        "true",
+      ),
+    );
+    expect(getPathname()).toBe(getDemoRoutePath("css", "keyframes-basic-bounce"));
+  });
+
+  it("switches mode to root route and resets scroll to top", async () => {
+    renderApp(getDemoRoutePath("css", "keyframes-basic-bounce"));
+
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      writable: true,
+      value: 480,
+    });
+
+    fireEvent.click(screen.getByRole("radio", { name: /Tailwind/i }));
+
+    await waitFor(() => expect(getPathname()).toBe("/tailwind"));
+    expect(
+      scrollToMock.mock.calls.some(
+        ([arg]) =>
+          typeof arg === "object" &&
+          arg !== null &&
+          "top" in arg &&
+          arg.top === 0,
+      ),
+    ).toBe(true);
+  });
+
+  it("redirects root route to /tailwind", async () => {
+    renderApp("/");
+
+    await waitFor(() => expect(getPathname()).toBe("/tailwind"));
+  });
+
+  it("redirects legacy demo hash links to canonical route URLs", async () => {
+    window.location.hash = "#hover-scale-glow";
+    renderApp("/tailwind");
+
+    await waitFor(() =>
+      expect(getPathname()).toBe(getDemoRoutePath("tailwind", "hover-scale-glow")),
     );
   });
 });

@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AnimationCard } from "./components/AnimationCard";
 import { CategoryIcon } from "./components/CategoryIcon";
 import { CategorySection } from "./components/CategorySection";
 import {
+  getDemoRoutePath,
   getGalleryData,
-  resolveHashToModeAndTarget,
+  resolveDemoFromRoute,
+  resolveLegacyHashToRoute,
   type DemoEntry,
   type GalleryMode,
 } from "./data/demoRegistry";
@@ -13,22 +16,18 @@ import { useActiveSection } from "./hooks/useActiveSection";
 import { useTheme } from "./hooks/useTheme";
 import type { Category } from "./types/demo";
 
-const MAX_DEMO_LOOKUP_FRAMES = 45;
-const MIN_SECTION_SCROLL_DURATION_MS = 300;
-const MAX_SECTION_SCROLL_DURATION_MS = 1400;
-const SECTION_SCROLL_MS_PER_PIXEL = 0.4;
+const MIN_PROGRAMMATIC_SCROLL_PAUSE_MS = 280;
+const MAX_PROGRAMMATIC_SCROLL_PAUSE_MS = 1200;
+const PROGRAMMATIC_SCROLL_PAUSE_MS_PER_PIXEL = 0.3;
 const PROGRAMMATIC_SCROLL_CLASS = "is-programmatic-scrolling";
+const DEFAULT_MODE: GalleryMode = "tailwind";
 
 function isEditableKeyboardTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
 
   const tagName = target.tagName;
-  if (
-    tagName === "INPUT" ||
-    tagName === "TEXTAREA" ||
-    tagName === "SELECT"
-  ) {
+  if (tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT") {
     return true;
   }
 
@@ -42,13 +41,97 @@ type GalleryDataView = {
   categoryCounts: ReadonlyMap<string, number>;
 };
 
+type QueuedDemo = {
+  id: string;
+  mode: GalleryMode;
+};
+
+type ParsedRoute =
+  | { kind: "mode"; mode: GalleryMode }
+  | {
+      kind: "demo";
+      mode: GalleryMode;
+      demoId: string;
+      canonicalPath: string;
+      isCanonical: boolean;
+    }
+  | { kind: "invalid"; redirectPath: string };
+
+type PendingLegacySectionScroll = {
+  mode: GalleryMode;
+  sectionId: string;
+  token: number;
+};
+
+function parseRoute(pathname: string): ParsedRoute {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) {
+    return { kind: "invalid", redirectPath: `/${DEFAULT_MODE}` };
+  }
+
+  const [modeSegment, slugSegment, ...rest] = segments;
+  if (modeSegment !== "tailwind" && modeSegment !== "css") {
+    return { kind: "invalid", redirectPath: `/${DEFAULT_MODE}` };
+  }
+  const mode: GalleryMode = modeSegment;
+
+  if (segments.length === 1) {
+    return { kind: "mode", mode };
+  }
+
+  if (!slugSegment || rest.length > 0) {
+    return { kind: "invalid", redirectPath: `/${mode}` };
+  }
+
+  let decodedSlug = slugSegment;
+  try {
+    decodedSlug = decodeURIComponent(slugSegment);
+  } catch {
+    return { kind: "invalid", redirectPath: `/${mode}` };
+  }
+
+  const resolved = resolveDemoFromRoute(mode, decodedSlug);
+  if (!resolved) {
+    return { kind: "invalid", redirectPath: `/${mode}` };
+  }
+
+  const canonicalPath = getDemoRoutePath(mode, resolved.demoId);
+  return {
+    kind: "demo",
+    mode,
+    demoId: resolved.demoId,
+    canonicalPath,
+    isCanonical: decodedSlug === resolved.canonicalSlug,
+  };
+}
+
 function App() {
-  const [galleryMode, setGalleryMode] = useState<GalleryMode>("tailwind");
-  const [maximizedDemoId, setMaximizedDemoId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const parsedRoute = useMemo(
+    () => parseRoute(location.pathname),
+    [location.pathname],
+  );
+  const effectiveGalleryMode =
+    parsedRoute.kind === "invalid" ? DEFAULT_MODE : parsedRoute.mode;
+  const activeMaximizedDemoId =
+    parsedRoute.kind === "demo" ? parsedRoute.demoId : null;
   const { theme, toggleTheme } = useTheme();
   const activeNavigationTokenRef = useRef(0);
-  const scrollAnimationFrameRef = useRef<number | null>(null);
+  const pendingLegacySectionScrollRef =
+    useRef<PendingLegacySectionScroll | null>(null);
+  const scrollPauseTimeoutRef = useRef<number | null>(null);
   const [isProgrammaticScrolling, setIsProgrammaticScrolling] = useState(false);
+  const [preloadedSectionsByMode, setPreloadedSectionsByMode] = useState<
+    Record<GalleryMode, string[]>
+  >({
+    tailwind: [],
+    css: [],
+  });
+  const preloadedSectionsByModeRef = useRef<Record<GalleryMode, Set<string>>>({
+    tailwind: new Set(),
+    css: new Set(),
+  });
 
   const galleryDataByMode = useMemo<Record<GalleryMode, GalleryDataView>>(
     () => ({
@@ -57,57 +140,69 @@ function App() {
     }),
     [],
   );
-  const { categories, demosByCategory, demoCategoryById } = useMemo(
-    () => galleryDataByMode[galleryMode],
-    [galleryDataByMode, galleryMode],
-  );
-  const activeMaximizedDemoId =
-    maximizedDemoId && demoCategoryById.has(maximizedDemoId)
-      ? maximizedDemoId
-      : null;
-  const orderedDemoIds = useMemo(
+  const maximizedDemoQueue = useMemo<QueuedDemo[]>(
     () =>
-      categories.flatMap((category) =>
-        (demosByCategory.get(category.id) ?? []).map((demo) => demo.id),
-      ),
-    [categories, demosByCategory],
+      (["tailwind", "css"] as const).flatMap((mode) => {
+        const data = galleryDataByMode[mode];
+        return data.categories.flatMap((category) =>
+          (data.demosByCategory.get(category.id) ?? []).map((demo) => ({
+            id: demo.id,
+            mode,
+          })),
+        );
+      }),
+    [galleryDataByMode],
   );
-  const activeMaximizedDemoIndex = useMemo(
+  const maximizedDemoIndexById = useMemo(
     () =>
-      activeMaximizedDemoId ? orderedDemoIds.indexOf(activeMaximizedDemoId) : -1,
-    [activeMaximizedDemoId, orderedDemoIds],
+      new Map(maximizedDemoQueue.map(({ id }, index) => [id, index] as const)),
+    [maximizedDemoQueue],
   );
+  const { categories, demosByCategory } = useMemo(
+    () => galleryDataByMode[effectiveGalleryMode],
+    [effectiveGalleryMode, galleryDataByMode],
+  );
+  const activeMaximizedDemoIndex = useMemo(() => {
+    if (!activeMaximizedDemoId) return -1;
+    return maximizedDemoIndexById.get(activeMaximizedDemoId) ?? -1;
+  }, [activeMaximizedDemoId, maximizedDemoIndexById]);
+  const activeMaximizedDemoPosition =
+    activeMaximizedDemoIndex === -1 ? 0 : activeMaximizedDemoIndex + 1;
+  const maximizedDemoTotal = maximizedDemoQueue.length;
   const canMaximizedDemoGoPrev = activeMaximizedDemoIndex > 0;
   const canMaximizedDemoGoNext =
     activeMaximizedDemoIndex !== -1 &&
-    activeMaximizedDemoIndex < orderedDemoIds.length - 1;
+    activeMaximizedDemoIndex < maximizedDemoQueue.length - 1;
   const closeMaximizedDemo = useCallback(() => {
-    setMaximizedDemoId(null);
-  }, []);
+    navigate(`/${effectiveGalleryMode}`);
+  }, [effectiveGalleryMode, navigate]);
   const navigateMaximizedDemo = useCallback(
     (direction: "prev" | "next") => {
-      setMaximizedDemoId((activeId) => {
-        if (!activeId) return activeId;
+      if (activeMaximizedDemoIndex === -1) return;
 
-        const activeIndex = orderedDemoIds.indexOf(activeId);
-        if (activeIndex === -1) return null;
+      const nextIndex =
+        direction === "prev"
+          ? activeMaximizedDemoIndex - 1
+          : activeMaximizedDemoIndex + 1;
+      if (nextIndex < 0 || nextIndex >= maximizedDemoQueue.length) {
+        return;
+      }
 
-        const nextIndex =
-          direction === "prev" ? activeIndex - 1 : activeIndex + 1;
+      const nextDemo = maximizedDemoQueue[nextIndex];
+      if (!nextDemo) return;
 
-        if (nextIndex < 0 || nextIndex >= orderedDemoIds.length) {
-          return activeId;
-        }
-
-        return orderedDemoIds[nextIndex] ?? activeId;
-      });
+      navigate(getDemoRoutePath(nextDemo.mode, nextDemo.id));
     },
-    [orderedDemoIds],
+    [activeMaximizedDemoIndex, maximizedDemoQueue, navigate],
   );
 
   const sectionIds = useMemo(
     () => categories.map((category) => category.id),
     [categories],
+  );
+  const preloadedSectionIds = useMemo(
+    () => new Set(preloadedSectionsByMode[effectiveGalleryMode]),
+    [effectiveGalleryMode, preloadedSectionsByMode],
   );
   const activeSection = useActiveSection(sectionIds);
 
@@ -117,19 +212,18 @@ function App() {
   }, []);
   const setGalleryModeWithTransition = useCallback(
     (mode: GalleryMode) => {
-      if (mode === galleryMode) return;
+      if (mode === effectiveGalleryMode && !activeMaximizedDemoId) return;
+      const targetPath = `/${mode}`;
 
       const applyModeChange = (commitSynchronously = false) => {
         if (commitSynchronously) {
-          flushSync(() => {
-            closeMaximizedDemo();
-            setGalleryMode(mode);
-          });
+          flushSync(() => navigate(targetPath));
+          window.scrollTo({ top: 0, behavior: "auto" });
           return;
         }
 
-        closeMaximizedDemo();
-        setGalleryMode(mode);
+        navigate(targetPath);
+        window.scrollTo({ top: 0, behavior: "auto" });
       };
 
       if (
@@ -148,25 +242,62 @@ function App() {
         applyModeChange();
       }
     },
-    [closeMaximizedDemo, galleryMode, prefersReducedMotion],
+    [
+      activeMaximizedDemoId,
+      effectiveGalleryMode,
+      navigate,
+      prefersReducedMotion,
+    ],
   );
 
-  const getNativeScrollBehavior = useCallback(() => {
-    return prefersReducedMotion() ? "auto" : "smooth";
-  }, [prefersReducedMotion]);
+  const resolveScrollBehavior = useCallback(
+    (forceAnimated = false): ScrollBehavior => {
+      if (prefersReducedMotion() && !forceAnimated) {
+        return "auto";
+      }
+      return "smooth";
+    },
+    [prefersReducedMotion],
+  );
 
-  const cancelSectionScrollAnimation = useCallback(() => {
-    if (scrollAnimationFrameRef.current !== null) {
-      window.cancelAnimationFrame(scrollAnimationFrameRef.current);
-      scrollAnimationFrameRef.current = null;
+  const clearProgrammaticScrollPause = useCallback(() => {
+    if (scrollPauseTimeoutRef.current !== null) {
+      window.clearTimeout(scrollPauseTimeoutRef.current);
+      scrollPauseTimeoutRef.current = null;
     }
     setIsProgrammaticScrolling(false);
   }, []);
 
-  const scrollSectionToTarget = useCallback(
-    (targetY: number, forceAnimated = false) => {
-      cancelSectionScrollAnimation();
+  const beginProgrammaticScrollPause = useCallback(
+    (distance: number, behavior: ScrollBehavior) => {
+      if (behavior === "auto" || Math.abs(distance) < 1) {
+        clearProgrammaticScrollPause();
+        return;
+      }
 
+      const pauseDurationMs = Math.min(
+        MAX_PROGRAMMATIC_SCROLL_PAUSE_MS,
+        Math.max(
+          MIN_PROGRAMMATIC_SCROLL_PAUSE_MS,
+          MIN_PROGRAMMATIC_SCROLL_PAUSE_MS +
+            Math.abs(distance) * PROGRAMMATIC_SCROLL_PAUSE_MS_PER_PIXEL,
+        ),
+      );
+
+      setIsProgrammaticScrolling(true);
+      if (scrollPauseTimeoutRef.current !== null) {
+        window.clearTimeout(scrollPauseTimeoutRef.current);
+      }
+      scrollPauseTimeoutRef.current = window.setTimeout(() => {
+        scrollPauseTimeoutRef.current = null;
+        setIsProgrammaticScrolling(false);
+      }, pauseDurationMs + 120);
+    },
+    [clearProgrammaticScrollPause],
+  );
+
+  const scrollToTargetY = useCallback(
+    (targetY: number, forceAnimated = false) => {
       const clampedTargetY = Math.max(
         0,
         Math.min(
@@ -178,69 +309,72 @@ function App() {
         ),
       );
 
-      if (prefersReducedMotion() && !forceAnimated) {
-        window.scrollTo({ top: clampedTargetY, behavior: "auto" });
-        return;
-      }
+      const behavior = resolveScrollBehavior(forceAnimated);
+      const distance = clampedTargetY - window.scrollY;
+      beginProgrammaticScrollPause(distance, behavior);
 
-      const startY = window.scrollY;
-      const distance = clampedTargetY - startY;
-      if (Math.abs(distance) < 1) {
-        window.scrollTo({ top: clampedTargetY, behavior: "auto" });
-        return;
-      }
+      window.scrollTo({
+        top: clampedTargetY,
+        behavior,
+      });
+    },
+    [beginProgrammaticScrollPause, resolveScrollBehavior],
+  );
 
-      const duration = Math.min(
-        MAX_SECTION_SCROLL_DURATION_MS,
-        Math.max(
-          MIN_SECTION_SCROLL_DURATION_MS,
-          MIN_SECTION_SCROLL_DURATION_MS +
-            Math.abs(distance) * SECTION_SCROLL_MS_PER_PIXEL,
-        ),
+  const getElementTargetY = useCallback((element: HTMLElement) => {
+    const elementTop = window.scrollY + element.getBoundingClientRect().top;
+    const scrollMarginTop =
+      Number.parseFloat(window.getComputedStyle(element).scrollMarginTop) || 0;
+    return elementTop - scrollMarginTop;
+  }, []);
+
+  const preloadSectionsThrough = useCallback(
+    (mode: GalleryMode, sectionId: string) => {
+      const categoryIds = galleryDataByMode[mode].categories.map(
+        (category) => category.id,
       );
+      const targetIndex = categoryIds.indexOf(sectionId);
+      if (targetIndex === -1) {
+        return false;
+      }
 
-      setIsProgrammaticScrolling(true);
+      const sectionsToPreload = categoryIds.slice(0, targetIndex + 1);
+      const modeSet = preloadedSectionsByModeRef.current[mode];
+      let didAdd = false;
 
-      let startTime: number | null = null;
-      const easeInOutCubic = (value: number) =>
-        value < 0.5
-          ? 4 * value * value * value
-          : 1 - Math.pow(-2 * value + 2, 3) / 2;
+      sectionsToPreload.forEach((id) => {
+        if (modeSet.has(id)) return;
+        modeSet.add(id);
+        didAdd = true;
+      });
 
-      const animate = (timestamp: number) => {
-        if (startTime === null) {
-          startTime = timestamp;
-        }
-        const elapsed = timestamp - startTime;
-        const progress = Math.min(1, elapsed / duration);
-        const easedProgress = easeInOutCubic(progress);
+      if (!didAdd) {
+        return false;
+      }
 
-        window.scrollTo({
-          top: startY + distance * easedProgress,
-          behavior: "auto",
-        });
+      setPreloadedSectionsByMode((current) => ({
+        ...current,
+        [mode]: Array.from(modeSet),
+      }));
 
-        if (progress < 1) {
-          scrollAnimationFrameRef.current =
-            window.requestAnimationFrame(animate);
+      return true;
+    },
+    [galleryDataByMode],
+  );
+
+  const runAfterPotentialPreload = useCallback(
+    (didPreload: boolean, callback: () => void) => {
+      window.requestAnimationFrame(() => {
+        if (!didPreload) {
+          callback();
           return;
         }
 
-        scrollAnimationFrameRef.current = null;
-        setIsProgrammaticScrolling(false);
-      };
-
-      scrollAnimationFrameRef.current = window.requestAnimationFrame(animate);
+        window.requestAnimationFrame(callback);
+      });
     },
-    [cancelSectionScrollAnimation, prefersReducedMotion],
+    [],
   );
-
-  const getSectionTargetY = useCallback((section: HTMLElement) => {
-    const sectionTop = window.scrollY + section.getBoundingClientRect().top;
-    const scrollMarginTop =
-      Number.parseFloat(window.getComputedStyle(section).scrollMarginTop) || 0;
-    return sectionTop - scrollMarginTop;
-  }, []);
 
   const nextNavigationToken = useCallback(() => {
     activeNavigationTokenRef.current += 1;
@@ -253,117 +387,84 @@ function App() {
   );
 
   const scrollToSectionWithToken = useCallback(
-    (
-      id: string,
-      token: number,
-      shouldUpdateHash = true,
-      forceAnimated = false,
-    ) => {
+    (id: string, token: number, mode: GalleryMode, forceAnimated = false) => {
       if (!isNavigationCurrent(token)) return false;
 
-      const section = document.getElementById(id);
-      if (!section) return false;
-
-      const targetY = getSectionTargetY(section);
-      scrollSectionToTarget(targetY, forceAnimated);
-
-      if (shouldUpdateHash) {
-        window.history.replaceState(null, "", `#${id}`);
-      }
-      return true;
-    },
-    [getSectionTargetY, isNavigationCurrent, scrollSectionToTarget],
-  );
-
-  const scrollToSection = useCallback(
-    (id: string, shouldUpdateHash = true) => {
-      const token = nextNavigationToken();
-      scrollToSectionWithToken(id, token, shouldUpdateHash, true);
-    },
-    [nextNavigationToken, scrollToSectionWithToken],
-  );
-
-  const openDemo = useCallback(
-    (
-      demoId: string,
-      mode: GalleryMode,
-      shouldUpdateHash = true,
-      navigationToken?: number,
-    ) => {
-      const data = galleryDataByMode[mode];
-      const categoryId = data.demoCategoryById.get(demoId);
-      if (!categoryId) return;
-
-      const token = navigationToken ?? nextNavigationToken();
-      scrollToSectionWithToken(categoryId, token, false);
-
-      let frameCount = 0;
-      const findDemoAndScroll = () => {
+      const didPreload = preloadSectionsThrough(mode, id);
+      runAfterPotentialPreload(didPreload, () => {
         if (!isNavigationCurrent(token)) return;
 
-        const demo = document.getElementById(demoId);
-        if (demo) {
-          demo.scrollIntoView({
-            behavior: getNativeScrollBehavior(),
-            block: "start",
-          });
+        const section = document.getElementById(id);
+        if (!(section instanceof HTMLElement)) return;
 
-          if (shouldUpdateHash) {
-            window.history.replaceState(null, "", `#${demoId}`);
-          }
-          return;
-        }
+        scrollToTargetY(getElementTargetY(section), forceAnimated);
+      });
 
-        frameCount += 1;
-        if (frameCount < MAX_DEMO_LOOKUP_FRAMES) {
-          window.requestAnimationFrame(findDemoAndScroll);
-        }
-      };
-
-      window.requestAnimationFrame(findDemoAndScroll);
+      return true;
     },
     [
-      galleryDataByMode,
-      getNativeScrollBehavior,
+      getElementTargetY,
       isNavigationCurrent,
-      nextNavigationToken,
-      scrollToSectionWithToken,
+      preloadSectionsThrough,
+      runAfterPotentialPreload,
+      scrollToTargetY,
     ],
   );
 
+  const scrollToSection = useCallback(
+    (id: string) => {
+      const token = nextNavigationToken();
+      scrollToSectionWithToken(id, token, effectiveGalleryMode, true);
+    },
+    [effectiveGalleryMode, nextNavigationToken, scrollToSectionWithToken],
+  );
+
   useEffect(() => {
-    const handleHashNavigation = () => {
+    if (parsedRoute.kind === "invalid") {
+      navigate(parsedRoute.redirectPath, { replace: true });
+      return;
+    }
+    if (parsedRoute.kind === "demo" && !parsedRoute.isCanonical) {
+      navigate(parsedRoute.canonicalPath, { replace: true });
+    }
+  }, [navigate, parsedRoute]);
+
+  useEffect(() => {
+    const handleLegacyHashNavigation = () => {
       const hash = window.location.hash.replace("#", "");
-      const resolved = resolveHashToModeAndTarget(hash);
+      const resolved = resolveLegacyHashToRoute(hash);
       if (!resolved) return;
 
-      const token = nextNavigationToken();
-      setGalleryMode(resolved.mode);
-      const { targetId } = resolved;
-      const categoryIds = galleryDataByMode[resolved.mode].categories.map(
-        (c) => c.id,
-      );
-      const isSection = categoryIds.includes(targetId);
+      if (resolved.kind === "section") {
+        pendingLegacySectionScrollRef.current = {
+          mode: resolved.mode,
+          sectionId: resolved.sectionId,
+          token: nextNavigationToken(),
+        };
+      } else {
+        pendingLegacySectionScrollRef.current = null;
+      }
 
-      window.requestAnimationFrame(() => {
-        if (isSection) {
-          scrollToSectionWithToken(targetId, token, false);
-          return;
-        }
-        openDemo(targetId, resolved.mode, false, token);
-      });
+      navigate(resolved.path, { replace: true });
     };
 
-    handleHashNavigation();
-    window.addEventListener("hashchange", handleHashNavigation);
+    handleLegacyHashNavigation();
+    window.addEventListener("hashchange", handleLegacyHashNavigation);
 
-    return () => window.removeEventListener("hashchange", handleHashNavigation);
-  }, [
-    galleryDataByMode,
-    nextNavigationToken,
-    openDemo,
-    scrollToSectionWithToken,
-  ]);
+    return () =>
+      window.removeEventListener("hashchange", handleLegacyHashNavigation);
+  }, [navigate, nextNavigationToken]);
+
+  useEffect(() => {
+    const pending = pendingLegacySectionScrollRef.current;
+    if (!pending || activeMaximizedDemoId || effectiveGalleryMode !== pending.mode) {
+      return;
+    }
+
+    if (scrollToSectionWithToken(pending.sectionId, pending.token, pending.mode)) {
+      pendingLegacySectionScrollRef.current = null;
+    }
+  }, [activeMaximizedDemoId, effectiveGalleryMode, scrollToSectionWithToken]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -375,18 +476,29 @@ function App() {
   }, [isProgrammaticScrolling]);
 
   useEffect(() => {
+    if (!isProgrammaticScrolling) return;
+
+    const handleScrollEnd = () => {
+      clearProgrammaticScrollPause();
+    };
+
+    window.addEventListener("scrollend", handleScrollEnd, { once: true });
+    return () => window.removeEventListener("scrollend", handleScrollEnd);
+  }, [clearProgrammaticScrollPause, isProgrammaticScrolling]);
+
+  useEffect(() => {
     return () => {
-      cancelSectionScrollAnimation();
+      clearProgrammaticScrollPause();
       document.documentElement.classList.remove(PROGRAMMATIC_SCROLL_CLASS);
     };
-  }, [cancelSectionScrollAnimation]);
+  }, [clearProgrammaticScrollPause]);
 
   useEffect(() => {
     if (!activeMaximizedDemoId) return;
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setMaximizedDemoId(null);
+        closeMaximizedDemo();
         return;
       }
       if (isEditableKeyboardTarget(event.target)) {
@@ -411,28 +523,29 @@ function App() {
     activeMaximizedDemoId,
     canMaximizedDemoGoNext,
     canMaximizedDemoGoPrev,
+    closeMaximizedDemo,
     navigateMaximizedDemo,
   ]);
 
   return (
-    <div className="min-h-screen text-text-primary">
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-20 flex-col border-r border-shell-sidebar-border bg-shell-sidebar-bg backdrop-blur-xl sm:w-72">
-        <div className="border-b border-shell-sidebar-border px-3 py-4 sm:px-5">
+    <div className="text-text-primary min-h-screen">
+      <aside className="border-shell-sidebar-border bg-shell-sidebar-bg fixed inset-y-0 left-0 z-50 flex w-20 flex-col border-r backdrop-blur-xl sm:w-72">
+        <div className="border-shell-sidebar-border border-b px-3 py-4 sm:px-5">
           <div>
-            <h1 className="text-center text-base leading-tight font-black tracking-[-0.02em] text-balance text-text-primary sm:text-left sm:text-2xl">
+            <h1 className="text-text-primary text-center text-base leading-tight font-black tracking-[-0.02em] text-balance sm:text-left sm:text-2xl">
               Web Animation
             </h1>
             <div className="mt-0.5 flex items-center justify-between gap-2">
               <p
-                className="hidden font-mono text-base tracking-wide text-text-secondary sm:block"
+                className="text-text-secondary hidden font-mono text-base tracking-wide sm:block"
                 data-source-file="src/App.tsx"
                 data-source-line="98"
               >
-                Feb 2026
+                February 2026
               </p>
               <button
                 onClick={toggleTheme}
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-button-neutral-border bg-button-neutral-bg text-base text-text-secondary transition hover:border-button-neutral-border-hover hover:bg-button-neutral-bg-hover hover:text-text-primary"
+                className="border-button-neutral-border bg-button-neutral-bg text-text-secondary hover:border-button-neutral-border-hover hover:bg-button-neutral-bg-hover hover:text-text-primary inline-flex size-8 shrink-0 items-center justify-center rounded-lg border text-base transition"
                 aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               >
                 {theme === "dark" ? "☀" : "☾"}
@@ -441,18 +554,20 @@ function App() {
           </div>
         </div>
 
-        <div className="border-b border-shell-sidebar-border px-2 py-3 sm:px-4">
+        <div className="border-shell-sidebar-border border-b px-2 py-3 sm:px-4">
           <div
-            className="relative flex rounded-lg border border-button-neutral-border bg-menu-toggle-track p-1"
+            className="border-button-neutral-border bg-menu-toggle-track relative flex rounded-lg border p-1"
             role="radiogroup"
             aria-label="Gallery mode"
           >
             {/* sliding indicator */}
             <span
-              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-md bg-menu-toggle-indicator transition-transform duration-300 ease-[cubic-bezier(.4,0,.2,1)]"
+              className="bg-menu-toggle-indicator absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-md transition-transform duration-300 ease-[cubic-bezier(.4,0,.2,1)]"
               style={{
                 transform:
-                  galleryMode === "css" ? "translateX(100%)" : "translateX(0)",
+                  effectiveGalleryMode === "css"
+                    ? "translateX(100%)"
+                    : "translateX(0)",
               }}
               aria-hidden
             />
@@ -460,12 +575,12 @@ function App() {
               <button
                 key={mode}
                 role="radio"
-                aria-checked={galleryMode === mode}
+                aria-checked={effectiveGalleryMode === mode}
                 onClick={() => {
                   setGalleryModeWithTransition(mode);
                 }}
                 className={`relative z-10 flex-1 rounded-md py-2.5 text-center text-sm font-bold tracking-wide transition-colors duration-200 ${
-                  galleryMode === mode
+                  effectiveGalleryMode === mode
                     ? "text-text-inverse"
                     : "text-text-tertiary hover:text-text-primary"
                 }`}
@@ -499,7 +614,7 @@ function App() {
                 className={`flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-sm font-semibold tracking-wide transition-all sm:justify-start sm:px-3 ${
                   isActive
                     ? "border-menu-item-border-active bg-menu-item-bg-active text-text-primary"
-                    : "border-button-neutral-border bg-transparent text-text-secondary hover:border-menu-item-border-hover hover:text-text-primary"
+                    : "border-button-neutral-border text-text-secondary bg-transparent"
                 }`}
                 aria-current={isActive ? "true" : undefined}
               >
@@ -515,7 +630,7 @@ function App() {
 
       {activeMaximizedDemoId && (
         <div
-          className="fixed inset-y-0 left-20 right-0 z-[110] backdrop-blur-md sm:left-72"
+          className="fixed inset-y-0 right-0 left-20 z-[110] backdrop-blur-md sm:left-72"
           style={{
             background:
               "color-mix(in oklab, var(--color-app-bg) 56%, transparent)",
@@ -525,7 +640,7 @@ function App() {
         />
       )}
 
-      <main className="relative ml-20 bg-app-main pt-7 pb-24 sm:ml-72 sm:pt-10">
+      <main className="bg-app-main relative ml-20 pt-7 pb-24 sm:ml-72 sm:pt-10">
         <div className={activeMaximizedDemoId ? "" : "mode-gallery-content"}>
           {categories.map((category, index) => {
             const demos = demosByCategory.get(category.id) ?? [];
@@ -533,7 +648,11 @@ function App() {
               <CategorySection
                 key={category.id}
                 category={category}
-                eager={index === 0}
+                eager={
+                  index === 0 ||
+                  activeMaximizedDemoId !== null ||
+                  preloadedSectionIds.has(category.id)
+                }
                 surfaceTone={index % 2 === 0 ? "odd" : "even"}
               >
                 {demos.map((demo) => (
@@ -548,15 +667,19 @@ function App() {
                       source: demo.source,
                     }}
                     isMaximized={activeMaximizedDemoId === demo.id}
-                    onToggleMaximize={() =>
-                      setMaximizedDemoId((activeId) =>
-                        activeId === demo.id ? null : demo.id,
-                      )
-                    }
+                    onToggleMaximize={() => {
+                      if (activeMaximizedDemoId === demo.id) {
+                        closeMaximizedDemo();
+                        return;
+                      }
+                      navigate(getDemoRoutePath(effectiveGalleryMode, demo.id));
+                    }}
                     canGoPrev={canMaximizedDemoGoPrev}
                     canGoNext={canMaximizedDemoGoNext}
                     onGoPrev={() => navigateMaximizedDemo("prev")}
                     onGoNext={() => navigateMaximizedDemo("next")}
+                    queuePosition={activeMaximizedDemoPosition}
+                    queueTotal={maximizedDemoTotal}
                   >
                     <demo.Component />
                   </AnimationCard>
@@ -566,12 +689,6 @@ function App() {
           })}
         </div>
       </main>
-
-      <footer className="ml-20 border-t border-divider py-8 text-center sm:ml-72">
-        <p className="font-mono text-xs tracking-wide text-text-tertiary">
-          animation.csstune.com
-        </p>
-      </footer>
     </div>
   );
 }

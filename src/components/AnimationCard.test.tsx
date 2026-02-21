@@ -40,7 +40,7 @@ const mockMetadata = {
 describe("AnimationCard", () => {
   it("renders title and description from metadata", () => {
     render(
-      <AnimationCard id="hover-scale-glow" metadata={mockMetadata}>
+      <AnimationCard id="hover-scale-glow" metadata={mockMetadata} isMaximized>
         <span>Preview</span>
       </AnimationCard>,
     );
@@ -85,6 +85,8 @@ describe("AnimationCard", () => {
         canGoNext
         onGoPrev={onGoPrev}
         onGoNext={onGoNext}
+        queuePosition={2}
+        queueTotal={120}
       >
         <span>Preview</span>
       </AnimationCard>,
@@ -99,6 +101,7 @@ describe("AnimationCard", () => {
 
     expect(prevButton).toBeDisabled();
     expect(nextButton).toBeEnabled();
+    expect(screen.getByText("2/120")).toBeInTheDocument();
 
     fireEvent.click(nextButton);
     expect(onGoNext).toHaveBeenCalledTimes(1);

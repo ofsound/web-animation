@@ -5,6 +5,7 @@ A showcase of CSS animations built with **Tailwind CSS v4**, React 19, and Vite.
 ## Tech Stack
 
 - **React 19** + TypeScript
+- **React Router** (BrowserRouter)
 - **Vite** for dev/build
 - **Tailwind CSS v4** with custom keyframes and theme tokens
 - Light/dark themes with `prefers-reduced-motion` support
@@ -23,17 +24,32 @@ npm run test     # Vitest
 
 ```
 src/
-├── App.tsx                     # Main layout, mode toggle, hash navigation
+├── App.tsx                     # Main layout, mode toggle, route-driven deep links
 ├── components/                 # AnimationCard, CategorySection, SectionNav
 ├── hooks/                      # useActiveSection, useTheme
 ├── data/
-│   ├── demoRegistry.ts         # Source-agnostic gallery data + hash resolution
+│   ├── demoRegistry.ts         # Gallery data + demo route slug helpers
 │   ├── animations.ts           # Tailwind demo metadata
 │   └── cssAnimations.ts        # Native CSS demo/category normalization
 ├── tailwindDemos/demos/        # Tailwind React demo components + catalog
 ├── cssDemos/demos/             # Native CSS demo components + catalog
 └── index.css                   # Tailwind + theme variables + keyframes
 ```
+
+## Routing & Deep Links
+
+- Mode root routes:
+  - `/tailwind`
+  - `/css`
+- Demo deep-link route:
+  - `/:mode/:title-slug~demo-id`
+  - Example: `/tailwind/gradient-border-spin~hover-gradient-border`
+- Legacy `#hash` links are redirected to the matching route.
+
+### BrowserRouter Hosting Note
+
+Because the app uses `BrowserRouter`, production hosting must rewrite non-asset
+requests to `index.html` so direct deep links load correctly.
 
 ## Adding Demos
 

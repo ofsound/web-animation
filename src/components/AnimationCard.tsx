@@ -35,6 +35,8 @@ interface AnimationCardProps {
   canGoNext?: boolean;
   onGoPrev?: () => void;
   onGoNext?: () => void;
+  queuePosition?: number;
+  queueTotal?: number;
 }
 
 const VOID_TAGS = new Set([
@@ -215,6 +217,8 @@ export function AnimationCard({
   canGoNext = false,
   onGoPrev,
   onGoNext,
+  queuePosition = 0,
+  queueTotal = 0,
 }: AnimationCardProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
@@ -348,6 +352,11 @@ export function AnimationCard({
     () => (source === "css" ? toScopedLiveCss(liveCode, id) : ""),
     [id, liveCode, source],
   );
+  const maximizedEditorLineCount = useMemo(() => {
+    const lineCount = liveCode.split(/\r\n|\r|\n/).length;
+    return Math.max(32, lineCount + 2);
+  }, [liveCode]);
+  const maximizedEditorHeightPx = maximizedEditorLineCount * 22;
   const editorExtensions = useMemo(
     () =>
       source === "css"
@@ -379,9 +388,9 @@ export function AnimationCard({
       <article
         ref={cardRef}
         id={id}
-        className={`group flex flex-col overflow-hidden border border-border-subtle bg-surface-card transition-transform duration-300 ${
+        className={`border-border-subtle bg-surface-card flex flex-col overflow-hidden border transition-transform duration-300 ${
           isMaximized
-            ? "fixed inset-y-0 right-0 left-20 z-[120] m-auto h-[min(700px,calc(100dvh-1rem))] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-72 sm:h-[min(700px,calc(100dvh-2rem))] sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
+            ? "fixed inset-y-0 right-0 left-20 z-[120] m-auto h-auto max-h-[calc(100dvh-1rem)] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-72 sm:max-h-[calc(100dvh-2rem)] sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
             : "relative rounded-2xl"
         }`}
         style={{
@@ -389,217 +398,238 @@ export function AnimationCard({
           ...(flipStyle ?? {}),
         }}
       >
-      {isMaximized && (onGoPrev || onGoNext) ? (
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
+        {isMaximized && (onGoPrev || onGoNext) ? (
+          <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1.5">
+            <button
+              onClick={onGoPrev}
+              disabled={!canGoPrev || !onGoPrev}
+              className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action text-text-primary px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-45`}
+              title="Go to previous card"
+              aria-label={`Show previous card before ${title}`}
+            >
+              <span className="font-mono">Prev</span>
+              <span aria-hidden className="font-mono text-[10px]">
+                ← ↑
+              </span>
+            </button>
+            <button
+              onClick={onGoNext}
+              disabled={!canGoNext || !onGoNext}
+              className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action text-text-primary px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-45`}
+              title="Go to next card"
+              aria-label={`Show next card after ${title}`}
+            >
+              <span className="font-mono">Next</span>
+              <span aria-hidden className="font-mono text-[10px]">
+                ↓ →
+              </span>
+            </button>
+            {queueTotal > 0 ? (
+              <span
+                className="border-button-neutral-border bg-surface-card-action text-text-secondary inline-flex min-w-[4.5rem] items-center justify-center rounded-lg border px-2.5 py-1.5 font-mono text-[11px]"
+                aria-label={`Card ${queuePosition} of ${queueTotal}`}
+              >
+                {queuePosition}/{queueTotal}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {onToggleMaximize ? (
           <button
-            onClick={onGoPrev}
-            disabled={!canGoPrev || !onGoPrev}
-            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action px-2.5 py-1.5 text-xs text-text-primary disabled:cursor-not-allowed disabled:opacity-45`}
-            title="Go to previous card"
-            aria-label={`Show previous card before ${title}`}
-          >
-            <span className="font-mono">Prev</span>
-            <span aria-hidden className="font-mono text-[10px]">
-              ← ↑
-            </span>
-          </button>
-          <button
-            onClick={onGoNext}
-            disabled={!canGoNext || !onGoNext}
-            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action px-2.5 py-1.5 text-xs text-text-primary disabled:cursor-not-allowed disabled:opacity-45`}
-            title="Go to next card"
-            aria-label={`Show next card after ${title}`}
-          >
-            <span className="font-mono">Next</span>
-            <span aria-hidden className="font-mono text-[10px]">
-              ↓ →
-            </span>
-          </button>
-        </div>
-      ) : null}
-
-      {onToggleMaximize ? (
-        <button
-          onClick={handleToggleMaximize}
-          className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} absolute top-3 right-3 z-20 bg-surface-card-action ${
-            isMaximized
-              ? "px-2.5 py-1.5 text-xs text-text-primary"
-              : "p-1.5 text-text-secondary"
-          }`}
-          aria-label={
-            isMaximized ? `Exit expanded view for ${title}` : `Expand ${title}`
-          }
-          title={isMaximized ? "Minimize view" : "Maximize view"}
-        >
-          {isMaximized ? (
-            <>
-              <IconMinimize className={iconSize} />
-              <span className="font-mono">Minimize</span>
-            </>
-          ) : (
-            <IconMaximize className={iconSize} />
-          )}
-        </button>
-      ) : null}
-
-      <div
-        className={`relative flex items-center justify-center bg-demo-preview-bg ${
-          isMaximized
-            ? "min-h-[200px] p-5 sm:min-h-[220px] sm:p-6"
-            : "min-h-[210px] p-7"
-        }`}
-      >
-        <div
-          key={`${id}-${replayKey}`}
-          data-live-demo-root={id}
-          className={`flex items-center justify-center ${
-            isMaximized || source === "css" ? "w-full" : ""
-          }`}
-        >
-          {source === "tailwind" ? (
-            liveTailwindMarkup ? (
-              <div
-                className={isMaximized ? "w-full" : "max-w-full"}
-                dangerouslySetInnerHTML={{ __html: liveTailwindMarkup }}
-              />
-            ) : (
-              children
-            )
-          ) : (
-            <>
-              {liveCss ? <style>{liveCss}</style> : null}
-              {children}
-            </>
-          )}
-        </div>
-        <button
-          onClick={() => setReplayKey((value) => value + 1)}
-          className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} absolute right-3 bottom-3 z-20 bg-surface-card-action text-text-secondary ${
-            isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
-          }`}
-          title="Replay animation"
-          aria-label={`Replay ${title} animation`}
-        >
-          <IconReplay className={iconSize} />
-          {isMaximized && <span className="font-mono">Replay</span>}
-        </button>
-      </div>
-
-      <div
-        className={`relative bg-gradient-to-b from-surface-card-header-start to-surface-card-subtle ${isMaximized ? "px-6 py-5" : "px-4 pt-2"}`}
-      >
-        <div className="mb-1.5">
-          <h3
-            className={
+            onClick={handleToggleMaximize}
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action absolute top-3 right-3 z-20 ${
               isMaximized
-                ? "text-xl font-semibold text-text-primary"
-                : "text-base font-semibold text-text-primary"
-            }
-          >
-            {title}
-          </h3>
-        </div>
-        {isMaximized && (
-          <p className="text-sm leading-relaxed text-text-secondary sm:text-base">
-            {description}
-          </p>
-        )}
-      </div>
-
-      <div
-        id={`${id}-code-panel`}
-        className={`code-panel relative mt-3 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden ${
-          isMaximized
-            ? "rounded-b-3xl p-6 pt-12"
-            : "max-h-[6.5rem] rounded-b-2xl px-4 pb-4"
-        }`}
-        style={{
-          background:
-            "color-mix(in oklab, var(--color-surface-card-subtle) 92%, var(--color-app-bg))",
-        }}
-      >
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-          <button
-            onClick={() => setLiveCode(metadata.code)}
-            disabled={!isCodeDirty}
-            className={`${ACTION_BTN_BASE} bg-button-neutral-bg text-text-secondary enabled:hover:border-button-neutral-border-hover enabled:hover:bg-button-neutral-bg-hover enabled:hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${
-              isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
+                ? "text-text-primary px-2.5 py-1.5 text-xs"
+                : "text-text-secondary p-1.5"
             }`}
-            title="Reset code"
-            aria-label={`Reset code for ${title}`}
-          >
-            <IconReset className={iconSize} />
-            {isMaximized && <span className="font-mono">Reset</span>}
-          </button>
-          <button
-            onClick={handleCopy}
-            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-button-neutral-bg text-text-secondary ${
-              isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
-            } ${copyState === "copied" ? "border-status-success/50! text-status-success!" : copyState === "failed" ? "border-status-error/50! text-status-error!" : ""}`}
-            title={
-              copyState === "copied"
-                ? "Copied!"
-                : copyState === "failed"
-                  ? "Copy failed"
-                  : "Copy code"
+            aria-label={
+              isMaximized
+                ? `Exit expanded view for ${title}`
+                : `Expand ${title}`
             }
-            aria-label={`Copy code for ${title}`}
+            title={isMaximized ? "Minimize view" : "Maximize view"}
           >
-            {copyState === "copied" ? (
+            {isMaximized ? (
               <>
-                <IconCheck className={iconSize} />
-                {isMaximized && <span className="font-mono">Copied</span>}
-              </>
-            ) : copyState === "failed" ? (
-              <>
-                <IconX className={iconSize} />
-                {isMaximized && <span className="font-mono">Failed</span>}
+                <IconMinimize className={iconSize} />
+                <span className="font-mono">Minimize</span>
               </>
             ) : (
-              <>
-                <IconCopy className={iconSize} />
-                {isMaximized && <span className="font-mono">Copy</span>}
-              </>
+              <IconMaximize className={iconSize} />
             )}
           </button>
-        </div>
-        <label id={`${id}-code-editor-label`} className="sr-only">
-          Live code editor for {title}
-        </label>
+        ) : null}
+
         <div
-          className={`rounded-lg border border-border-strong bg-surface-code shadow-inner focus-within:border-accent-brand focus-within:ring-1 focus-within:ring-accent-brand ${
-            isMaximized ? "p-3" : "p-2"
+          className={`animation-demo-surface group bg-demo-preview-bg relative flex items-center justify-center ${
+            isMaximized
+              ? "aspect-[5/2] w-full p-5 sm:p-6"
+              : "aspect-[8/5] w-full p-7"
           }`}
         >
-          <CodeMirror
-            id={`${id}-code-editor`}
-            value={liveCode}
-            onChange={(value) => setLiveCode(value)}
-            extensions={editorExtensions}
-            theme={editorTheme}
-            basicSetup={{
-              foldGutter: false,
-              lineNumbers: isMaximized,
-              highlightActiveLineGutter: false,
-            }}
-            height={isMaximized ? "22rem" : "4.25rem"}
-            maxHeight={isMaximized ? "22rem" : "4.25rem"}
-            className={`code-block code-editor min-h-0 w-full flex-1 overflow-auto bg-transparent pr-1 font-mono leading-relaxed text-text-tertiary focus-visible:outline-none ${
-              isMaximized ? "text-sm" : "text-[10px]"
+          <div
+            key={`${id}-${replayKey}`}
+            data-live-demo-root={id}
+            className={`flex h-full items-center justify-center ${
+              source === "css" ? "w-full" : ""
             }`}
-            aria-labelledby={`${id}-code-editor-label`}
-            aria-describedby={`${id}-code-hint`}
-          />
+          >
+            {source === "tailwind" ? (
+              liveTailwindMarkup ? (
+                <div
+                  className="max-w-full"
+                  dangerouslySetInnerHTML={{ __html: liveTailwindMarkup }}
+                />
+              ) : (
+                children
+              )
+            ) : (
+              <>
+                {liveCss ? <style>{liveCss}</style> : null}
+                {children}
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => setReplayKey((value) => value + 1)}
+            className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action text-text-secondary absolute top-3 left-3 z-20 ${
+              isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
+            }`}
+            title="Replay animation"
+            aria-label={`Replay ${title} animation`}
+          >
+            <IconReplay className={iconSize} />
+            {isMaximized && <span className="font-mono">Replay</span>}
+          </button>
         </div>
-      </div>
 
-      <span className="sr-only" aria-live="polite">
-        {copyState === "copied"
-          ? `${title} code copied to clipboard.`
-          : copyState === "failed"
-            ? `Failed to copy ${title} code.`
-            : ""}
-      </span>
+        <div
+          className={`from-surface-card-header-start to-surface-card-subtle relative flex items-baseline justify-between gap-3 bg-gradient-to-b ${isMaximized ? "px-6 py-5" : "px-4 pt-2"}`}
+        >
+          <div className="min-w-0 flex-1">
+            <h3
+              className={
+                isMaximized
+                  ? "text-text-primary text-xl font-semibold"
+                  : "text-text-primary text-base font-semibold"
+              }
+            >
+              {title}
+            </h3>
+            {isMaximized && (
+              <p className="text-text-secondary mt-0.5 text-sm leading-relaxed sm:text-base">
+                {description}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              onClick={() => setLiveCode(metadata.code)}
+              disabled={!isCodeDirty}
+              className={`${ACTION_BTN_BASE} bg-button-neutral-bg text-text-secondary enabled:hover:border-button-neutral-border-hover enabled:hover:bg-button-neutral-bg-hover enabled:hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40 ${
+                isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
+              }`}
+              title="Reset code"
+              aria-label={`Reset code for ${title}`}
+            >
+              <IconReset className={iconSize} />
+              {isMaximized && <span className="font-mono">Reset</span>}
+            </button>
+            <button
+              onClick={handleCopy}
+              className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-button-neutral-bg text-text-secondary ${
+                isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
+              } ${copyState === "copied" ? "border-status-success/50! text-status-success!" : copyState === "failed" ? "border-status-error/50! text-status-error!" : ""}`}
+              title={
+                copyState === "copied"
+                  ? "Copied!"
+                  : copyState === "failed"
+                    ? "Copy failed"
+                    : "Copy code"
+              }
+              aria-label={`Copy code for ${title}`}
+            >
+              {copyState === "copied" ? (
+                <>
+                  <IconCheck className={iconSize} />
+                  {isMaximized && <span className="font-mono">Copied</span>}
+                </>
+              ) : copyState === "failed" ? (
+                <>
+                  <IconX className={iconSize} />
+                  {isMaximized && <span className="font-mono">Failed</span>}
+                </>
+              ) : (
+                <>
+                  <IconCopy className={iconSize} />
+                  {isMaximized && <span className="font-mono">Copy</span>}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div
+          id={`${id}-code-panel`}
+          className={`code-panel relative mt-1 mb-4 flex min-h-0 flex-1 flex-col overflow-hidden ${
+            isMaximized
+              ? "rounded-b-3xl p-6 pt-2"
+              : "max-h-[6.5rem] rounded-b-2xl px-4"
+          }`}
+          style={{
+            background:
+              "color-mix(in oklab, var(--color-surface-card-subtle) 92%, var(--color-app-bg))",
+          }}
+        >
+          <label id={`${id}-code-editor-label`} className="sr-only">
+            Live code editor for {title}
+          </label>
+          <div
+            className={`border-border-strong bg-surface-code focus-within:border-accent-brand focus-within:ring-accent-brand overflow-hidden rounded-lg border shadow-inner focus-within:ring-1 ${
+              isMaximized ? "p-3" : "p-2"
+            }`}
+          >
+            {isMaximized ? (
+              <CodeMirror
+                id={`${id}-code-editor`}
+                value={liveCode}
+                onChange={(value) => setLiveCode(value)}
+                extensions={editorExtensions}
+                theme={editorTheme}
+                basicSetup={{
+                  foldGutter: false,
+                  lineNumbers: true,
+                  highlightActiveLineGutter: false,
+                  highlightActiveLine: false,
+                }}
+                height={`${maximizedEditorHeightPx}px`}
+                maxHeight={`${maximizedEditorHeightPx}px`}
+                className="code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none"
+                aria-labelledby={`${id}-code-editor-label`}
+                aria-describedby={`${id}-code-hint`}
+              />
+            ) : (
+              <textarea
+                id={`${id}-code-editor`}
+                value={liveCode}
+                onChange={(event) => setLiveCode(event.target.value)}
+                className="code-block text-text-tertiary min-h-[3.875rem] w-full resize-none overflow-auto bg-transparent pr-1 font-mono text-[10px] leading-relaxed focus-visible:outline-none"
+                aria-labelledby={`${id}-code-editor-label`}
+                aria-describedby={`${id}-code-hint`}
+                spellCheck={false}
+              />
+            )}
+          </div>
+        </div>
+
+        <span className="sr-only" aria-live="polite">
+          {copyState === "copied"
+            ? `${title} code copied to clipboard.`
+            : copyState === "failed"
+              ? `Failed to copy ${title} code.`
+              : ""}
+        </span>
       </article>
     </div>
   );
