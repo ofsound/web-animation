@@ -64,7 +64,8 @@
   },
   "knip": {
     "ignore": [
-      "api/[...route].ts"
+      "api/[...route].ts",
+      "src/tailwind-demo-safelist.ts"
     ],
     "ignoreDependencies": [
       "@react-dev-inspector/babel-plugin"

@@ -18,6 +18,67 @@ const VOID_TAGS = new Set([
 const CSS_RULE_LINE_PATTERN =
   /^\s*(?:@|\.|#|:|::|\*|[a-z][\w-]*(?:\[[^\]]+\])?)[^{()]*\{/i;
 
+export interface LiveDatabaseFiles {
+  html: string;
+  css: string;
+  js: string;
+  tailwindCss: string;
+  meta: string;
+}
+
+type LiveDatabaseSection = keyof LiveDatabaseFiles;
+
+function toLiveDatabaseSection(line: string): LiveDatabaseSection | null {
+  const marker = line.trim();
+  if (/^<!--\s*html\s*-->$/i.test(marker)) return "html";
+  if (/^\/\*\s*tailwind css\s*\*\/$/i.test(marker)) return "tailwindCss";
+  if (/^\/\*\s*css\s*\*\/$/i.test(marker)) return "css";
+  if (/^\/\/\s*javascript\s*$/i.test(marker)) return "js";
+  if (/^\/\/\s*meta\s*$/i.test(marker)) return "meta";
+  return null;
+}
+
+export function toLiveDatabaseFiles(input: string): LiveDatabaseFiles {
+  const files: LiveDatabaseFiles = {
+    html: "",
+    css: "",
+    js: "",
+    tailwindCss: "",
+    meta: "",
+  };
+
+  if (!input) return files;
+
+  const normalizedInput = input.replace(/\r\n?/g, "\n");
+  const lines = normalizedInput.split("\n");
+
+  let currentSection: LiveDatabaseSection = "html";
+  let hasSectionMarkers = false;
+
+  for (const line of lines) {
+    const nextSection = toLiveDatabaseSection(line);
+    if (nextSection) {
+      currentSection = nextSection;
+      hasSectionMarkers = true;
+      continue;
+    }
+
+    files[currentSection] = files[currentSection]
+      ? `${files[currentSection]}\n${line}`
+      : line;
+  }
+
+  if (!hasSectionMarkers) {
+    files.html = input;
+    files.css = "";
+    files.js = "";
+    files.tailwindCss = "";
+    files.meta = "";
+  }
+
+  return files;
+}
+
 export function toLiveTailwindMarkup(input: string): string | null {
   if (typeof window === "undefined") return null;
 

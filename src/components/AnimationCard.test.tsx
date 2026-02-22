@@ -30,12 +30,45 @@ vi.mock("@uiw/react-codemirror", () => ({
   ),
 }));
 
+vi.mock("./IsolatedDemoFrame", () => ({
+  IsolatedDemoFrame: ({
+    files,
+  }: {
+    files: {
+      html: string;
+      css: string;
+      js: string;
+      tailwindCss: string;
+      meta: string;
+    };
+  }) => (
+    <div data-testid="isolated-demo-frame">
+      <span data-testid="isolated-html">{files.html}</span>
+      <span data-testid="isolated-css">{files.css}</span>
+    </div>
+  ),
+}));
+
 const mockMetadata = {
   title: "Scale & Glow",
   description:
     "Smooth scale-up with a glowing box-shadow on hover using transition-all.",
   code: "<button>Hover me</button>",
 };
+
+const databaseInitialCode = [
+  "<!-- HTML -->",
+  '<button class="rounded border">Original</button>',
+  "",
+  "/* Tailwind CSS */",
+  "",
+  "/* CSS */",
+  ".rounded { border-width: 1px; }",
+  "",
+  "// JavaScript",
+  "",
+  "// Meta",
+].join("\n");
 
 describe("AnimationCard", () => {
   it("renders title and description from metadata", () => {
@@ -70,6 +103,82 @@ describe("AnimationCard", () => {
     });
 
     expect(screen.getByText("Edited")).toBeInTheDocument();
+  });
+
+  it("updates the live preview for database code edits in minimized mode", () => {
+    render(
+      <AnimationCard
+        id="db-demo"
+        metadata={{ ...mockMetadata, source: "database", code: databaseInitialCode }}
+      >
+        <span>Preview</span>
+      </AnimationCard>,
+    );
+
+    expect(screen.getByTestId("isolated-html")).toHaveTextContent("Original");
+    expect(screen.getByTestId("isolated-css")).toHaveTextContent(
+      ".rounded { border-width: 1px; }",
+    );
+
+    fireEvent.change(screen.getByLabelText(/Live code editor/i), {
+      target: {
+        value: [
+          "<!-- HTML -->",
+          '<button class="rounded border">Edited</button>',
+          "",
+          "/* Tailwind CSS */",
+          "",
+          "/* CSS */",
+          ".rounded { border-width: 3px; }",
+          "",
+          "// JavaScript",
+          "",
+          "// Meta",
+        ].join("\n"),
+      },
+    });
+
+    expect(screen.getByTestId("isolated-html")).toHaveTextContent("Edited");
+    expect(screen.getByTestId("isolated-css")).toHaveTextContent(
+      ".rounded { border-width: 3px; }",
+    );
+  });
+
+  it("updates the live preview for database code edits in maximized mode", async () => {
+    render(
+      <AnimationCard
+        id="db-demo-max"
+        metadata={{ ...mockMetadata, source: "database", code: databaseInitialCode }}
+        isMaximized
+      >
+        <span>Preview</span>
+      </AnimationCard>,
+    );
+
+    const editor = await screen.findByLabelText(/Live code editor/i);
+
+    fireEvent.change(editor, {
+      target: {
+        value: [
+          "<!-- HTML -->",
+          '<button class="rounded border">Max Edited</button>',
+          "",
+          "/* Tailwind CSS */",
+          "",
+          "/* CSS */",
+          ".rounded { border-width: 2px; }",
+          "",
+          "// JavaScript",
+          "",
+          "// Meta",
+        ].join("\n"),
+      },
+    });
+
+    expect(screen.getByTestId("isolated-html")).toHaveTextContent("Max Edited");
+    expect(screen.getByTestId("isolated-css")).toHaveTextContent(
+      ".rounded { border-width: 2px; }",
+    );
   });
 
   it("shows maximized prev/next controls and respects disabled states", () => {

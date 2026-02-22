@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTheme } from "../hooks/useTheme";
+import { collectFrameGlobalCss } from "../lib/frameGlobalStyles";
 import { collectFrameThemeCss } from "../lib/frameThemeStyles";
 import type { DemoDraft } from "./types";
 
@@ -37,6 +38,7 @@ function buildPreviewDoc(
   draft: DemoDraft,
   themeClass: "light" | "dark",
   themeCss: string,
+  globalCss: string,
 ): string {
   const html = draft.files.html || "<div>No HTML provided.</div>";
   const css = `${draft.files.tailwind_css}\n${draft.files.css}`;
@@ -52,6 +54,7 @@ function buildPreviewDoc(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob: https: http:; font-src data: https: http:; connect-src 'none'; media-src data: blob:; child-src 'none'; frame-src 'none';" />
   <style>${themeCss}</style>
+  <style>${globalCss}</style>
   <style>
     html, body {
       margin: 0;
@@ -98,11 +101,12 @@ interface DemoPreviewFrameProps {
 export function DemoPreviewFrame({ draft }: DemoPreviewFrameProps) {
   const { theme } = useTheme();
   const themeCss = useMemo(() => collectFrameThemeCss(theme), [theme]);
+  const globalCss = useMemo(() => collectFrameGlobalCss(), []);
 
   const srcDoc = useMemo(() => {
     if (!draft) return "";
-    return buildPreviewDoc(draft, theme, themeCss);
-  }, [draft, theme, themeCss]);
+    return buildPreviewDoc(draft, theme, themeCss, globalCss);
+  }, [draft, theme, themeCss, globalCss]);
 
   if (!draft) {
     return (

@@ -17,6 +17,17 @@
 @source inline("{items,justify,content,self,place-items,place-content}-{start,end,center,between,around,evenly,stretch,baseline}");
 @source inline("{overflow,overflow-x,overflow-y}-{auto,hidden,clip,visible,scroll}");
 @source inline("{transition,transition-all,transition-colors,transition-opacity,transition-transform,transform,uppercase,lowercase,capitalize,truncate}");
+@source inline("{hover:,focus:,active:,group-hover:,}{translate-x,translate-y,scale,scale-x,scale-y,rotate,opacity,blur,backdrop-blur,shadow}-{0,0.5,1,1.5,2,3,4,5,6,8,10,12,16,20,24,28,32,36,40,44,48,52,56,60,64,72,80,96,100,105,110,125,150,200,300,400,500,700,1000,full,sm,md,lg,xl,2xl}");
+@source inline("{hover:,focus:,group-hover:,}{bg,text,border,ring,from,via,to}-{accent-brand,accent-brand-secondary,accent-soft,accent-soft-strong,border-subtle,border-strong,surface-control,surface-card,surface-card-subtle,shell-sidebar-overlay,text-primary,text-secondary,text-tertiary,text-inverse,status-success,status-warning,status-error}");
+@source inline("animate-{blur-in,bounce-in,breathe,fade-in,fade-in-down,fade-in-up,flip-x,flip-y,float,gradient-x,gradient-y,heartbeat,jello,levitate,marquee,morph,orbit,orbit-reverse,ping-slow,progress,pulse-glow,pulse-ring,rubber-band,scale-in,shimmer,skeleton,slide-in-bounce,spin-reverse,spin-slow,tada,text-glow,typewriter,wave,wiggle,zoom-in-rotate}");
+@source "./tailwind-demo-safelist.ts";
+
+@layer utilities {
+  .hover\:tracking-\[0\.3em\]:hover,
+  .hover\:tracking-\[\.3em\]:hover {
+    letter-spacing: 0.3em;
+  }
+}
 
 :root {
   &.dark {

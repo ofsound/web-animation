@@ -8,7 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import type { DemoSource } from "../types/demo";
-import { toLiveTailwindMarkup, toScopedLiveCss } from "../lib/liveEditorUtils";
+import {
+  toLiveDatabaseFiles,
+  toLiveTailwindMarkup,
+  toScopedLiveCss,
+} from "../lib/liveEditorUtils";
 import {
   IconCheck,
   IconCopy,
@@ -20,6 +24,7 @@ import {
   ACTION_BTN_BASE,
   ACTION_BTN_HOVER,
 } from "./AnimationCardIcons";
+import { IsolatedDemoFrame } from "./IsolatedDemoFrame";
 import { LiveCodeEditor } from "./LiveCodeEditor";
 
 type CopyResult = "success" | "error";
@@ -196,6 +201,10 @@ export function AnimationCard({
     () => (source === "css" ? toScopedLiveCss(liveCode, id) : ""),
     [id, liveCode, source],
   );
+  const liveDatabaseFiles = useMemo(
+    () => (source === "database" ? toLiveDatabaseFiles(liveCode) : null),
+    [liveCode, source],
+  );
 
   const handleCopy = async () => {
     try {
@@ -320,6 +329,8 @@ export function AnimationCard({
                 {liveCss ? <style>{liveCss}</style> : null}
                 {children}
               </>
+            ) : source === "database" && liveDatabaseFiles ? (
+              <IsolatedDemoFrame files={liveDatabaseFiles} />
             ) : (
               children
             )}

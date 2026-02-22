@@ -1,4 +1,4 @@
-export type FrameTheme = "light" | "dark";
+type FrameTheme = "light" | "dark";
 
 export function collectFrameThemeCss(theme: FrameTheme): string {
   if (typeof document === "undefined") {

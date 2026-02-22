@@ -1,9 +1,8 @@
 import type { GalleryRegistry, GalleryMode } from "../data/demoRegistry";
 
-export type { GalleryMode, GalleryRegistry };
 export const DEFAULT_MODE: GalleryMode = "tailwind";
 
-export type ParsedRoute =
+type ParsedRoute =
   | { kind: "mode"; mode: GalleryMode }
   | {
       kind: "demo";

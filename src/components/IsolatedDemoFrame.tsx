@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTheme } from "../hooks/useTheme";
+import { collectFrameGlobalCss } from "../lib/frameGlobalStyles";
 import { collectFrameThemeCss } from "../lib/frameThemeStyles";
 
 export type IsolatedDemoFiles = {
@@ -45,6 +46,7 @@ function buildFrameDoc(
   files: IsolatedDemoFiles,
   themeClass: "light" | "dark",
   themeCss: string,
+  globalCss: string,
 ): string {
 
   const escapedGuard = escapeScript(NETWORK_GUARD);
@@ -59,6 +61,7 @@ function buildFrameDoc(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob: https: http:; font-src data: https: http:; connect-src 'none'; media-src data: blob:; frame-src 'none'; child-src 'none'; form-action 'none';" />
   <style>${themeCss}</style>
+  <style>${globalCss}</style>
   <style>
     html, body {
       margin: 0;
@@ -105,9 +108,10 @@ interface IsolatedDemoFrameProps {
 export function IsolatedDemoFrame({ files }: IsolatedDemoFrameProps) {
   const { theme } = useTheme();
   const themeCss = useMemo(() => collectFrameThemeCss(theme), [theme]);
+  const globalCss = useMemo(() => collectFrameGlobalCss(), []);
   const srcDoc = useMemo(
-    () => buildFrameDoc(files, theme, themeCss),
-    [files, theme, themeCss],
+    () => buildFrameDoc(files, theme, themeCss, globalCss),
+    [files, theme, themeCss, globalCss],
   );
 
   return (
