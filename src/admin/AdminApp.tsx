@@ -315,15 +315,10 @@ export default function AdminApp() {
     async (preferred?: { categoryId?: string | null; demoId?: string | null }) => {
       setRefreshing(true);
       try {
-        const [categoriesResponse, demosResponse] = await Promise.all([
-          apiRequest<CategoriesResponse>("/api/admin/categories"),
-          apiRequest<DemosResponse>("/api/admin/demos"),
-        ]);
-
+        const categoriesResponse =
+          await apiRequest<CategoriesResponse>("/api/admin/categories");
         const nextCategories = categoriesResponse.categories;
-        const nextDemos = demosResponse.demos;
         setCategories(nextCategories);
-        setDemos(nextDemos);
 
         const preferredCategoryId =
           preferred?.categoryId ?? selectedCategoryId ?? nextCategories[0]?.id ?? null;
@@ -332,11 +327,15 @@ export default function AdminApp() {
           : nextCategories[0]?.id ?? null;
         setSelectedCategoryId(resolvedCategoryId);
 
+        const demosUrl = resolvedCategoryId
+          ? `/api/admin/demos?categoryId=${encodeURIComponent(resolvedCategoryId)}`
+          : "/api/admin/demos";
+        const demosResponse = await apiRequest<DemosResponse>(demosUrl);
+        const nextDemos = demosResponse.demos;
+        setDemos(nextDemos);
+
         const demosInResolvedCategory = resolvedCategoryId
-          ? nextDemos
-              .filter((demo) => demo.categoryId === resolvedCategoryId)
-              .slice()
-              .sort(compareSort)
+          ? nextDemos.slice().sort(compareSort)
           : [];
         const preferredDemoId = preferred?.demoId ?? selectedDemoId ?? demosInResolvedCategory[0]?.id ?? null;
         const resolvedDemoId = demosInResolvedCategory.some((demo) => demo.id === preferredDemoId)
@@ -860,7 +859,7 @@ export default function AdminApp() {
                     key={category.id}
                     type="button"
                     onClick={() => {
-                      setSelectedCategoryId(category.id);
+                      void refreshData({ categoryId: category.id });
                     }}
                     className={`w-full rounded-md border px-2 py-1.5 text-left text-sm ${
                       selectedCategoryId === category.id
@@ -884,7 +883,7 @@ export default function AdminApp() {
                     key={category.id}
                     type="button"
                     onClick={() => {
-                      setSelectedCategoryId(category.id);
+                      void refreshData({ categoryId: category.id });
                     }}
                     className={`w-full rounded-md border px-2 py-1.5 text-left text-sm ${
                       selectedCategoryId === category.id
