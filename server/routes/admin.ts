@@ -556,9 +556,14 @@ adminRoutes.post("/demos/:id/publish", async (c) => {
     return c.json(result);
   } catch (err) {
     if (err && typeof err === "object" && "status" in err && "error" in err) {
+      const rawStatus = (err as { status?: unknown }).status;
+      const status: 400 | 404 | 500 =
+        rawStatus === 400 || rawStatus === 404 || rawStatus === 500
+          ? rawStatus
+          : 500;
       return c.json(
         { error: (err as { error: unknown }).error },
-        (err as { status: number }).status,
+        status,
       );
     }
     throw err;
