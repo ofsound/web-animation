@@ -14,31 +14,21 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-const jsonHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-} as const;
-
-export default async function handler() {
+export default async function handler(
+  _req: { method?: string },
+  res: { status: (n: number) => { json: (o: object) => void }; setHeader: (k: string, v: string) => unknown },
+) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
   try {
     const payload = await withTimeout(
       loadPublicGalleryPayload(),
       DB_TIMEOUT_MS,
     );
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: jsonHeaders,
-    });
+    res.status(200).json(payload);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Database error";
     console.error("[gallery] Error:", message, error);
-    return new Response(
-      JSON.stringify({ error: message }),
-      {
-        status: 503,
-        headers: jsonHeaders,
-      },
-    );
+    res.status(503).json({ error: message });
   }
 }
