@@ -9,6 +9,7 @@ import {
   type LiveDatabaseFiles,
 } from "../lib/liveEditorUtils";
 import type { DemoSource } from "../types/demo";
+import { MaximizedSingleCodeEditor } from "./MaximizedSingleCodeEditor";
 
 interface MaximizedCodeEditorProps {
   id: string;
@@ -46,9 +47,9 @@ const CODEMIRROR_SETUP = {
 const EDITOR_CLASS =
   "code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none";
 
-function countLines(value: string): number {
-  return value.split(/\r\n|\r|\n/).length;
-}
+const EDITOR_CLASS_DATABASE =
+  "code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-xs leading-relaxed focus-visible:outline-none";
+const DATABASE_EDITOR_VIEWPORT_PX = 340;
 
 function toDatabaseColumns(maximizedPanel: DatabasePanelKind | null): string {
   if (!maximizedPanel) return "repeat(4, minmax(220px, 1fr))";
@@ -98,23 +99,6 @@ export function MaximizedCodeEditor({
     () => (source === "database" ? toLiveDatabaseFiles(baselineValue) : null),
     [baselineValue, source],
   );
-  const maximizedEditorLineCount = useMemo(
-    () => Math.max(32, countLines(value) + 2),
-    [value],
-  );
-  const maximizedEditorHeightPx = maximizedEditorLineCount * 22;
-  const databaseEditorHeightPx = useMemo(() => {
-    if (!databaseFiles) return 0;
-    const maxLineCount = Math.max(
-      ...DATABASE_PANEL_ORDER.map((panel) => countLines(databaseFiles[panel])),
-    );
-    return Math.max(18, maxLineCount + 2) * 22;
-  }, [databaseFiles]);
-
-  const editorExtensions = useMemo(() => {
-    if (source === "css") return [css()];
-    return [html({ autoCloseTags: true, matchClosingTags: true })];
-  }, [source]);
   const databaseColumns = useMemo(
     () => toDatabaseColumns(maximizedPanel),
     [maximizedPanel],
@@ -191,7 +175,7 @@ export function MaximizedCodeEditor({
               return (
                 <section
                   key={panel}
-                  className="border-border-strong bg-surface-code overflow-hidden rounded-lg border"
+                  className="border-border-strong bg-surface-code min-h-0 overflow-hidden rounded-lg border shadow-inner"
                 >
                   {compressed ? (
                     <div className="flex h-[180px] flex-col items-center gap-1.5 px-1 py-2">
@@ -301,9 +285,9 @@ export function MaximizedCodeEditor({
                         extensions={toPanelExtensions(panel)}
                         theme={editorTheme}
                         basicSetup={CODEMIRROR_SETUP}
-                        height={`${databaseEditorHeightPx}px`}
-                        maxHeight={`${databaseEditorHeightPx}px`}
-                        className={EDITOR_CLASS}
+                        height={`${DATABASE_EDITOR_VIEWPORT_PX}px`}
+                        maxHeight={`${DATABASE_EDITOR_VIEWPORT_PX}px`}
+                        className={`${EDITOR_CLASS_DATABASE} database-code-editor`}
                         aria-labelledby={`${id}-${panel}-code-editor-label`}
                         aria-describedby={`${id}-code-hint`}
                       />
@@ -319,19 +303,15 @@ export function MaximizedCodeEditor({
   }
 
   return (
-    <CodeMirror
-      id={`${id}-code-editor`}
+    <MaximizedSingleCodeEditor
+      id={id}
+      title={title}
       value={value}
       onChange={onChange}
-      extensions={editorExtensions}
-      theme={editorTheme}
-      basicSetup={CODEMIRROR_SETUP}
-      height={`${maximizedEditorHeightPx}px`}
-      maxHeight={`${maximizedEditorHeightPx}px`}
+      source={source}
+      themeMode={themeMode}
+      codeMirrorSetup={CODEMIRROR_SETUP}
       className={EDITOR_CLASS}
-      aria-labelledby={`${id}-code-editor-label`}
-      aria-describedby={`${id}-code-hint`}
-      aria-label={`Live code editor for ${title}`}
     />
   );
 }

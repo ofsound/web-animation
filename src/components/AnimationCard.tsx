@@ -230,7 +230,10 @@ export function AnimationCard({
   const replayAnimations = (root: HTMLElement | null): void => {
     if (!root) return;
 
-    const targets = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+    const targets = [
+      root,
+      ...Array.from(root.querySelectorAll<HTMLElement>("*")),
+    ];
     const seenAnimations = new Set<Animation>();
 
     for (const target of targets) {
@@ -275,7 +278,7 @@ export function AnimationCard({
         id={id}
         className={`border-border-subtle bg-surface-card flex flex-col overflow-hidden border transition-transform duration-300 ${
           isMaximized
-            ? "fixed inset-y-0 right-0 left-20 z-[120] m-auto h-auto max-h-[calc(100dvh-1rem)] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-72 sm:max-h-[calc(100dvh-2rem)] sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
+            ? "fixed inset-y-0 right-0 left-20 z-[120] m-auto h-[75dvh] w-[min(1100px,calc(100vw-5rem-1rem))] rounded-3xl border-2 sm:left-72 sm:w-[min(1100px,calc(100vw-18rem-2rem))]"
             : "relative rounded-2xl"
         }`}
         style={{
@@ -284,39 +287,40 @@ export function AnimationCard({
         }}
       >
         {isMaximized && (onGoPrev || onGoNext) ? (
-          <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1.5">
+          <div className="absolute top-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0">
+            {/* ── Prev (chevron pointing left) ── */}
             <button
               onClick={onGoPrev}
               disabled={!canGoPrev || !onGoPrev}
-              className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action text-text-primary px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-45`}
+              className={`inline-flex items-center justify-center bg-surface-card-action text-text-primary pl-4 pr-3 py-1.5 text-xs font-mono transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none`}
+              style={{ clipPath: "polygon(10% 0%, 100% 0%, 100% 100%, 10% 100%, 0% 50%)" }}
               title="Go to previous card"
               aria-label={`Show previous card before ${title}`}
             >
-              <span className="font-mono">Prev</span>
-              <span aria-hidden className="font-mono text-[10px]">
-                ← ↑
-              </span>
+              Prev
             </button>
-            <button
-              onClick={onGoNext}
-              disabled={!canGoNext || !onGoNext}
-              className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action text-text-primary px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-45`}
-              title="Go to next card"
-              aria-label={`Show next card after ${title}`}
-            >
-              <span className="font-mono">Next</span>
-              <span aria-hidden className="font-mono text-[10px]">
-                ↓ →
-              </span>
-            </button>
+
+            {/* ── Counter (frosted glass) ── */}
             {queueTotal > 0 ? (
               <span
-                className="border-button-neutral-border bg-surface-card-action text-text-secondary inline-flex min-w-[4.5rem] items-center justify-center rounded-lg border px-2.5 py-1.5 font-mono text-[11px]"
+                className="bg-surface-counter-glass text-text-secondary inline-flex min-w-16 items-center justify-center rounded-md px-2.5 py-1.5 font-mono text-[11px] backdrop-blur-md"
                 aria-label={`Card ${queuePosition} of ${queueTotal}`}
               >
                 {queuePosition}/{queueTotal}
               </span>
             ) : null}
+
+            {/* ── Next (chevron pointing right) ── */}
+            <button
+              onClick={onGoNext}
+              disabled={!canGoNext || !onGoNext}
+              className={`inline-flex items-center justify-center bg-surface-card-action text-text-primary pl-3 pr-4 py-1.5 text-xs font-mono transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none`}
+              style={{ clipPath: "polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%)" }}
+              title="Go to next card"
+              aria-label={`Show next card after ${title}`}
+            >
+              Next
+            </button>
           </div>
         ) : null}
 
@@ -338,7 +342,6 @@ export function AnimationCard({
             {isMaximized ? (
               <>
                 <IconMinimize className={iconSize} />
-                <span className="font-mono">Minimize</span>
               </>
             ) : (
               <IconMaximize className={iconSize} />
@@ -375,7 +378,10 @@ export function AnimationCard({
                 {children}
               </>
             ) : source === "database" && liveDatabaseFiles ? (
-              <IsolatedDemoFrame ref={isolatedFrameRef} files={liveDatabaseFiles} />
+              <IsolatedDemoFrame
+                ref={isolatedFrameRef}
+                files={liveDatabaseFiles}
+              />
             ) : (
               children
             )}
@@ -389,14 +395,13 @@ export function AnimationCard({
             aria-label={`Replay ${title} animation`}
           >
             <IconReplay className={iconSize} />
-            {isMaximized && <span className="font-mono">Replay</span>}
           </button>
         </div>
 
         <div
-          className={`from-surface-card-header-start to-surface-card-subtle relative flex items-baseline justify-between gap-3 bg-gradient-to-b ${isMaximized ? "px-6 py-5" : "px-4 pt-2"}`}
+          className={`from-surface-card-header-start to-surface-card border-border-subtle relative flex items-baseline justify-between gap-3 bg-gradient-to-b ${isMaximized ? "px-6 pb-3 pt-5" : "px-4 pt-2"}`}
         >
-          <div className="min-w-0 flex-1">
+          <div className="mb-1 min-w-0 flex-1">
             <h3
               className={
                 isMaximized

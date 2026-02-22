@@ -26,6 +26,12 @@ export interface LiveDatabaseFiles {
 }
 
 type LiveDatabaseSection = keyof LiveDatabaseFiles;
+const LIVE_DATABASE_SECTION_INDEX: Record<LiveDatabaseSection, number> = {
+  html: 0,
+  tailwindCss: 1,
+  css: 2,
+  js: 3,
+};
 
 function toLiveDatabaseSection(line: string): LiveDatabaseSection | null {
   const marker = line.trim();
@@ -50,14 +56,24 @@ export function toLiveDatabaseFiles(input: string): LiveDatabaseFiles {
   const lines = normalizedInput.split("\n");
 
   let currentSection: LiveDatabaseSection = "html";
+  let currentSectionIndex = LIVE_DATABASE_SECTION_INDEX[currentSection];
   let hasSectionMarkers = false;
 
   for (const line of lines) {
     const nextSection = toLiveDatabaseSection(line);
     if (nextSection) {
-      currentSection = nextSection;
-      hasSectionMarkers = true;
-      continue;
+      const nextSectionIndex = LIVE_DATABASE_SECTION_INDEX[nextSection];
+      const isInitialHtmlMarker =
+        nextSection === "html" && !hasSectionMarkers && files.html === "";
+
+      // Section markers only move forward (or consume the initial HTML marker)
+      // so marker-like lines inside JS/CSS content don't reshuffle sections.
+      if (isInitialHtmlMarker || nextSectionIndex > currentSectionIndex) {
+        currentSection = nextSection;
+        currentSectionIndex = nextSectionIndex;
+        hasSectionMarkers = true;
+        continue;
+      }
     }
 
     files[currentSection] = files[currentSection]

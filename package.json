@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
+    "db:relocate-demo-animation-css": "tsx server/scripts/relocate-demo-animation-css.ts",
     "env:check": "tsx server/scripts/check-env.ts",
     "admin:seed": "BETTER_AUTH_ALLOW_SIGNUP=true tsx server/scripts/ensure-admin.ts"
   },

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Use .dark class on html (from ThemeProvider) instead of prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Live editor safelist: preload broad utility coverage for internal tooling */
 @source inline("{hover:,focus:,active:,disabled:,group-hover:,}{bg,text,border,ring,outline,stroke,fill,from,via,to}-{slate,gray,zinc,neutral,stone,red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose,black,white}-{50,100,200,300,400,500,600,700,800,900,950}");
 @source inline("{p,px,py,pt,pb,pl,pr,m,mx,my,mt,mb,ml,mr,gap,w,h,min-w,min-h,max-w,max-h,rounded}-{0,1,2,3,4,5,6,7,8,9,10,11,12,14,16,20,24,28,32,36,40,44,48,52,56,60,64,72,80,96,full,screen}");
@@ -19,7 +22,6 @@
 @source inline("{transition,transition-all,transition-colors,transition-opacity,transition-transform,transform,uppercase,lowercase,capitalize,truncate}");
 @source inline("{hover:,focus:,active:,group-hover:,}{translate-x,translate-y,scale,scale-x,scale-y,rotate,opacity,blur,backdrop-blur,shadow}-{0,0.5,1,1.5,2,3,4,5,6,8,10,12,16,20,24,28,32,36,40,44,48,52,56,60,64,72,80,96,100,105,110,125,150,200,300,400,500,700,1000,full,sm,md,lg,xl,2xl}");
 @source inline("{hover:,focus:,group-hover:,}{bg,text,border,ring,from,via,to}-{accent-brand,accent-brand-secondary,accent-soft,accent-soft-strong,border-subtle,border-strong,surface-control,surface-card,surface-card-subtle,shell-sidebar-overlay,text-primary,text-secondary,text-tertiary,text-inverse,status-success,status-warning,status-error}");
-@source inline("animate-{blur-in,bounce-in,breathe,fade-in,fade-in-down,fade-in-up,flip-x,flip-y,float,gradient-x,gradient-y,heartbeat,jello,levitate,marquee,morph,orbit,orbit-reverse,ping-slow,progress,pulse-glow,pulse-ring,rubber-band,scale-in,shimmer,skeleton,slide-in-bounce,spin-reverse,spin-slow,tada,text-glow,typewriter,wave,wiggle,zoom-in-rotate}");
 @source "./tailwind-demo-safelist.ts";
 
 @layer utilities {
@@ -66,23 +68,29 @@
   );
   --color-surface-card: light-dark(
     theme(colors.zinc.50),
-    theme(colors.zinc.900)
+    theme(colors.stone.950)
   );
+
   --color-surface-card-subtle: light-dark(
     theme(colors.zinc.50),
     theme(colors.neutral.900)
   );
+
   --color-surface-card-header-start: light-dark(
-    theme(colors.zinc.100),
-    theme(colors.zinc.800)
+    theme(colors.white),
+    theme(colors.black)
   );
   --color-surface-card-action: light-dark(
-    theme(colors.zinc.100),
+    theme(colors.zinc.50),
     theme(colors.zinc.800)
+  );
+  --color-surface-counter-glass: light-dark(
+    oklch(0.96 0 0 / 0.55),
+    oklch(0.22 0 0 / 0.5)
   );
   --color-surface-code: light-dark(
     color-mix(in oklch, theme(colors.zinc.100) 84%, white 16%),
-    color-mix(in oklch, theme(colors.zinc.800) 92%, theme(colors.zinc.950) 8%)
+    theme(colors.neutral.900)
   );
   --color-demo-preview-bg: light-dark(white, black);
   --color-surface-section-odd-light: theme(colors.white);
@@ -247,46 +255,6 @@
   --brand: var(--color-accent-brand);
   --ring: var(--color-focus);
   --card-border: var(--color-border-subtle);
-
-  /* Custom keyframe animations */
-  --animate-fade-in: fade-in 0.6s ease-out both;
-  --animate-fade-in-up: fade-in-up 0.6s ease-out both;
-  --animate-fade-in-down: fade-in-down 0.5s ease-out both;
-  --animate-scale-in: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
-  --animate-text-glow: text-glow 2s ease-in-out infinite;
-  --animate-pulse-ring: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1)
-    infinite;
-  --animate-spin-slow: spin 3s linear infinite;
-  --animate-spin-reverse: spin 2s linear infinite reverse;
-  --animate-bounce-in: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  --animate-wiggle: wiggle 1s ease-in-out infinite;
-  --animate-heartbeat: heartbeat 1.5s ease-in-out infinite;
-  --animate-flip-x: flip-x 0.6s ease-out both;
-  --animate-flip-y: flip-y 0.6s ease-out both;
-  --animate-blur-in: blur-in 0.6s ease-out both;
-  --animate-rubber-band: rubber-band 1s ease-in-out;
-  --animate-jello: jello 1s ease-in-out;
-  --animate-tada: tada 1s ease-in-out;
-  --animate-gradient-x: gradient-x 3s ease infinite;
-  --animate-gradient-y: gradient-y 3s ease infinite;
-  --animate-shimmer: shimmer 2s linear infinite;
-  --animate-typewriter: typewriter 3s steps(30) 1s both;
-  --animate-blink-caret: blink-caret 0.8s step-end infinite;
-  --animate-morph: morph 4s ease-in-out infinite;
-  --animate-orbit: orbit 4s linear infinite;
-  --animate-orbit-reverse: orbit 6s linear infinite reverse;
-  --animate-wave: wave 2.5s ease-in-out infinite;
-  --animate-breathe: breathe 4s ease-in-out infinite;
-  --animate-slide-in-bounce: slide-in-bounce 0.7s
-    cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  --animate-zoom-in-rotate: zoom-in-rotate 0.5s ease-out both;
-  --animate-marquee: marquee 15s linear infinite;
-  --animate-skeleton: skeleton 1.5s ease-in-out infinite;
-  --animate-progress: progress 2s ease-in-out infinite;
-  --animate-ping-slow: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-  --animate-levitate: levitate 5s ease-in-out infinite;
 }
 
 html,
@@ -391,424 +359,6 @@ body {
   }
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes fade-in-down {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 0 5px color-mix(in oklch, var(--color-accent-brand) 30%, transparent),
-      0 0 20px color-mix(in oklch, var(--color-accent-brand) 10%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 20px color-mix(in oklch, var(--color-accent-brand) 60%, transparent),
-      0 0 60px color-mix(in oklch, var(--color-accent-brand) 20%, transparent);
-  }
-}
-@keyframes text-glow {
-  0%,
-  100% {
-    text-shadow:
-      0 0 8px color-mix(in oklch, var(--color-accent-brand) 40%, transparent),
-      0 0 16px color-mix(in oklch, var(--color-accent-brand) 20%, transparent);
-  }
-  50% {
-    text-shadow:
-      0 0 12px color-mix(in oklch, var(--color-accent-brand) 70%, transparent),
-      0 0 32px color-mix(in oklch, var(--color-accent-brand) 40%, transparent);
-  }
-}
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2.5);
-    opacity: 0;
-  }
-}
-@keyframes bounce-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-@keyframes wiggle {
-  0%,
-  100% {
-    transform: rotate(-3deg);
-  }
-  50% {
-    transform: rotate(3deg);
-  }
-}
-@keyframes heartbeat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  14% {
-    transform: scale(1.3);
-  }
-  28% {
-    transform: scale(1);
-  }
-  42% {
-    transform: scale(1.3);
-  }
-  70% {
-    transform: scale(1);
-  }
-}
-@keyframes flip-x {
-  from {
-    opacity: 0;
-    transform: perspective(400px) rotateX(90deg);
-  }
-  to {
-    opacity: 1;
-    transform: perspective(400px) rotateX(0);
-  }
-}
-@keyframes flip-y {
-  from {
-    opacity: 0;
-    transform: perspective(400px) rotateY(90deg);
-  }
-  to {
-    opacity: 1;
-    transform: perspective(400px) rotateY(0);
-  }
-}
-@keyframes blur-in {
-  from {
-    opacity: 0;
-    filter: blur(12px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-@keyframes rubber-band {
-  0% {
-    transform: scaleX(1) scaleY(1);
-  }
-  30% {
-    transform: scaleX(1.25) scaleY(0.75);
-  }
-  40% {
-    transform: scaleX(0.75) scaleY(1.25);
-  }
-  50% {
-    transform: scaleX(1.15) scaleY(0.85);
-  }
-  65% {
-    transform: scaleX(0.95) scaleY(1.05);
-  }
-  75% {
-    transform: scaleX(1.05) scaleY(0.95);
-  }
-  100% {
-    transform: scaleX(1) scaleY(1);
-  }
-}
-@keyframes jello {
-  0%,
-  100% {
-    transform: skewX(0) skewY(0);
-  }
-  30% {
-    transform: skewX(-12.5deg) skewY(-12.5deg);
-  }
-  40% {
-    transform: skewX(6.25deg) skewY(6.25deg);
-  }
-  50% {
-    transform: skewX(-3.125deg) skewY(-3.125deg);
-  }
-  65% {
-    transform: skewX(1.5625deg) skewY(1.5625deg);
-  }
-  75% {
-    transform: skewX(-0.78125deg) skewY(-0.78125deg);
-  }
-}
-@keyframes tada {
-  0% {
-    transform: scale(1) rotate(0);
-  }
-  10%,
-  20% {
-    transform: scale(0.9) rotate(-3deg);
-  }
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: scale(1.1) rotate(3deg);
-  }
-  40%,
-  60%,
-  80% {
-    transform: scale(1.1) rotate(-3deg);
-  }
-  100% {
-    transform: scale(1) rotate(0);
-  }
-}
-@keyframes gradient-x {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-@keyframes gradient-y {
-  0%,
-  100% {
-    background-position: 50% 0%;
-  }
-  50% {
-    background-position: 50% 100%;
-  }
-}
-@keyframes shimmer {
-  from {
-    background-position: -200% 0;
-  }
-  to {
-    background-position: 200% 0;
-  }
-}
-@keyframes typewriter {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
-}
-@keyframes blink-caret {
-  from,
-  to {
-    border-color: transparent;
-  }
-  50% {
-    border-color: currentColor;
-  }
-}
-@keyframes morph {
-  0%,
-  100% {
-    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  }
-  50% {
-    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
-  }
-}
-@keyframes orbit {
-  from {
-    transform: rotate(0deg) translateX(50px) rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg) translateX(50px) rotate(-360deg);
-  }
-}
-@keyframes wave {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  10% {
-    transform: rotate(14deg);
-  }
-  20% {
-    transform: rotate(-8deg);
-  }
-  30% {
-    transform: rotate(14deg);
-  }
-  40% {
-    transform: rotate(-4deg);
-  }
-  50% {
-    transform: rotate(10deg);
-  }
-  60% {
-    transform: rotate(0deg);
-  }
-}
-@keyframes breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-}
-@keyframes glitch {
-  0% {
-    transform: translate(0);
-  }
-  20% {
-    transform: translate(-3px, 3px);
-  }
-  40% {
-    transform: translate(-3px, -3px);
-  }
-  60% {
-    transform: translate(3px, 3px);
-  }
-  80% {
-    transform: translate(3px, -3px);
-  }
-  100% {
-    transform: translate(0);
-  }
-}
-@keyframes slide-in-bounce {
-  0% {
-    opacity: 0;
-    transform: translateX(-60px);
-  }
-  60% {
-    transform: translateX(8px);
-  }
-  80% {
-    transform: translateX(-4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes zoom-in-rotate {
-  from {
-    opacity: 0;
-    transform: scale(0) rotate(-180deg);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-@keyframes skeleton {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-@keyframes progress {
-  0% {
-    width: 0%;
-  }
-  50% {
-    width: 70%;
-  }
-  100% {
-    width: 100%;
-  }
-}
-@keyframes ping-slow {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  75%,
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-@keyframes levitate {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-8px) rotate(1deg);
-  }
-  50% {
-    transform: translateY(-14px) rotate(0deg);
-  }
-  75% {
-    transform: translateY(-8px) rotate(-1deg);
-  }
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -844,6 +394,13 @@ body {
 }
 .code-panel .code-editor .cm-scroller {
   scrollbar-width: thin;
+}
+.code-panel .database-code-editor .cm-scroller {
+  overflow: auto !important;
+  scrollbar-gutter: stable both-edges;
+}
+.code-panel .database-code-editor .cm-content {
+  min-width: max-content;
 }
 
 @media (prefers-reduced-motion: reduce) {

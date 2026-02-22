@@ -31,22 +31,20 @@ export function LiveCodeEditor({
   return (
     <div
       id={`${id}-code-panel`}
-      className={`code-panel relative mt-1 mb-4 flex min-h-0 flex-1 flex-col overflow-hidden ${
+      className={`code-panel relative mb-4 flex min-h-0 flex-1 flex-col overflow-hidden ${
         isMaximized
-          ? "rounded-b-3xl p-6 pt-2"
-          : "max-h-[6.5rem] rounded-b-2xl px-4"
+          ? "mt-0.5 rounded-b-3xl p-6 pt-1"
+          : "mt-1 max-h-[6.5rem] rounded-b-2xl px-4"
       }`}
-      style={{
-        background:
-          "color-mix(in oklab, var(--color-surface-card-subtle) 92%, var(--color-app-bg))",
-      }}
     >
       <label id={`${id}-code-editor-label`} className="sr-only">
         Live code editor for {title}
       </label>
       <div
-        className={`border-border-strong bg-surface-code focus-within:border-accent-brand focus-within:ring-accent-brand overflow-hidden rounded-lg border shadow-inner focus-within:ring-1 ${
-          isMaximized ? "p-3" : "p-2"
+        className={`overflow-hidden ${
+          isMaximized
+            ? "pl-0 pr-3 pt-1.5 pb-3"
+            : "border-border-strong bg-surface-code focus-within:border-accent-brand focus-within:ring-accent-brand rounded-lg border shadow-inner focus-within:ring-1 p-2"
         }`}
       >
         {isMaximized ? (
