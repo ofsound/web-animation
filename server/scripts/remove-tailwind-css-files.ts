@@ -1,8 +1,8 @@
 import "dotenv/config";
 
 import { eq } from "drizzle-orm";
-import { db } from "../db/client";
-import { demoFiles } from "../db/schema";
+import { db } from "../db/client.js";
+import { demoFiles } from "../db/schema.js";
 
 async function main(): Promise<void> {
   const existing = await db

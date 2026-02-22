@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { and, asc, eq, inArray, max } from "drizzle-orm";
 import { z } from "zod";
-import { auth } from "../auth";
-import { db } from "../db/client";
-import { demoCategories, demoFiles, demos } from "../db/schema";
-import { isAdminEmail } from "../env";
-import { createId, toSlug } from "../utils";
+import { auth } from "../auth.js";
+import { db } from "../db/client.js";
+import { demoCategories, demoFiles, demos } from "../db/schema.js";
+import { isAdminEmail } from "../env.js";
+import { createId, toSlug } from "../utils.js";
 
 const categoryTypeSchema = z.enum(["css", "tailwind"]);
 const fileKindSchema = z.enum(["html", "css", "js"]);

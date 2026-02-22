@@ -5,9 +5,9 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
-import { db } from "../db/client";
-import { demoCategories, demoFiles, demos } from "../db/schema";
-import { createId } from "../utils";
+import { db } from "../db/client.js";
+import { demoCategories, demoFiles, demos } from "../db/schema.js";
+import { createId } from "../utils.js";
 
 type DemoFileKind = "html" | "css" | "js" | "tailwind_css" | "meta";
 

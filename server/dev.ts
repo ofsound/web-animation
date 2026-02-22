@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
-import { app } from "./app";
-import { serverEnv } from "./env";
+import { app } from "./app.js";
+import { serverEnv } from "./env.js";
 
 serve(
   {

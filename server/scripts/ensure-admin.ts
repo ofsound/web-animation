@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
-import { auth } from "../auth";
-import { db } from "../db/client";
-import { user } from "../db/schema";
-import { serverEnv } from "../env";
+import { auth } from "../auth.js";
+import { db } from "../db/client.js";
+import { user } from "../db/schema.js";
+import { serverEnv } from "../env.js";
 
 async function main() {
   if (!serverEnv.ADMIN_PASSWORD) {

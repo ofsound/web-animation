@@ -119,16 +119,18 @@ function toIsolatedComponent(files: IsolatedDemoFiles): ComponentType {
 
 function getPublicGalleryUrl(): string {
   if (typeof window !== "undefined") {
-    const origin = window.location?.origin;
-    if (origin && origin !== "null") {
-      return new URL("/api/public/gallery", origin).toString();
-    }
+    // Use a relative API path in browsers to avoid origin parsing edge cases.
+    return "/api/public/gallery";
   }
 
-  return new URL(
-    "/api/public/gallery",
-    import.meta.env.VITE_API_ORIGIN ?? "http://localhost:8787",
-  ).toString();
+  try {
+    return new URL(
+      "/api/public/gallery",
+      import.meta.env.VITE_API_ORIGIN ?? "http://localhost:8787",
+    ).toString();
+  } catch {
+    return "http://localhost:8787/api/public/gallery";
+  }
 }
 
 export async function fetchPublicGallery(): Promise<PublicGalleryResponse> {

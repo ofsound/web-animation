@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "./db/client";
-import { isAdminEmail, serverEnv } from "./env";
+import { db } from "./db/client.js";
+import { isAdminEmail, serverEnv } from "./env.js";
 
 const allowSignUp = serverEnv.BETTER_AUTH_ALLOW_SIGNUP;
 

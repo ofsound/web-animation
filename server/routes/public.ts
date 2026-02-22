@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { asc, eq, inArray } from "drizzle-orm";
-import { db } from "../db/client";
-import { demoCategories, demoFiles, demos } from "../db/schema";
+import { db } from "../db/client.js";
+import { demoCategories, demoFiles, demos } from "../db/schema.js";
 
 export const publicRoutes = new Hono();
 

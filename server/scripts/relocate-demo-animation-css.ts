@@ -1,9 +1,9 @@
 import "dotenv/config";
 
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { db } from "../db/client";
-import { demoFiles, demos } from "../db/schema";
-import { createId } from "../utils";
+import { db } from "../db/client.js";
+import { demoFiles, demos } from "../db/schema.js";
+import { createId } from "../utils.js";
 
 const START_MARKER = "/* codex:migrated-demo-animation-css:start */";
 const END_MARKER = "/* codex:migrated-demo-animation-css:end */";

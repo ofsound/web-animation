@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
-import { auth } from "./auth";
-import { adminRoutes } from "./routes/admin";
-import { publicRoutes } from "./routes/public";
+import { auth } from "./auth.js";
+import { adminRoutes } from "./routes/admin.js";
+import { publicRoutes } from "./routes/public.js";
 
 export const app = new Hono();
 
