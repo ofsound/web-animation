@@ -146,7 +146,14 @@ export async function fetchPublicGallery(): Promise<PublicGalleryResponse> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to load public gallery (${response.status}).`);
+    let message = `Failed to load public gallery (${response.status})`;
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (typeof body?.error === "string") message = body.error;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(message);
   }
 
   return (await response.json()) as PublicGalleryResponse;
