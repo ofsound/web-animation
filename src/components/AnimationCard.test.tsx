@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useEffect } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { AnimationCard } from "./AnimationCard";
 
@@ -39,7 +40,6 @@ vi.mock("./IsolatedDemoFrame", () => ({
       css: string;
       js: string;
       tailwindCss: string;
-      meta: string;
     };
   }) => (
     <div data-testid="isolated-demo-frame">
@@ -66,8 +66,6 @@ const databaseInitialCode = [
   ".rounded { border-width: 1px; }",
   "",
   "// JavaScript",
-  "",
-  "// Meta",
 ].join("\n");
 
 describe("AnimationCard", () => {
@@ -132,8 +130,6 @@ describe("AnimationCard", () => {
           ".rounded { border-width: 3px; }",
           "",
           "// JavaScript",
-          "",
-          "// Meta",
         ].join("\n"),
       },
     });
@@ -155,23 +151,18 @@ describe("AnimationCard", () => {
       </AnimationCard>,
     );
 
-    const editor = await screen.findByLabelText(/Live code editor/i);
+    const htmlEditor = await screen.findByLabelText(/Live HTML editor/i);
+    const cssEditor = await screen.findByLabelText(/Live CSS editor/i);
 
-    fireEvent.change(editor, {
+    fireEvent.change(htmlEditor, {
       target: {
-        value: [
-          "<!-- HTML -->",
-          '<button class="rounded border">Max Edited</button>',
-          "",
-          "/* Tailwind CSS */",
-          "",
-          "/* CSS */",
-          ".rounded { border-width: 2px; }",
-          "",
-          "// JavaScript",
-          "",
-          "// Meta",
-        ].join("\n"),
+        value: '<button class="rounded border">Max Edited</button>',
+      },
+    });
+
+    fireEvent.change(cssEditor, {
+      target: {
+        value: ".rounded { border-width: 2px; }",
       },
     });
 
@@ -215,5 +206,32 @@ describe("AnimationCard", () => {
     fireEvent.click(nextButton);
     expect(onGoNext).toHaveBeenCalledTimes(1);
     expect(onGoPrev).not.toHaveBeenCalled();
+  });
+
+  it("does not remount preview content when replay is clicked", () => {
+    let mountCount = 0;
+
+    function MountProbe() {
+      useEffect(() => {
+        mountCount += 1;
+      }, []);
+
+      return <span>Probe</span>;
+    }
+
+    render(
+      <AnimationCard
+        id="hover-scale-glow"
+        metadata={{ ...mockMetadata, source: "css" }}
+      >
+        <MountProbe />
+      </AnimationCard>,
+    );
+
+    expect(mountCount).toBe(1);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Replay Scale & Glow animation/i }),
+    );
+    expect(mountCount).toBe(1);
   });
 });

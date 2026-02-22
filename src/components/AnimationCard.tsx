@@ -72,8 +72,9 @@ export function AnimationCard({
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
-  const [replayKey, setReplayKey] = useState(0);
   const [liveCode, setLiveCode] = useState(() => metadata.code);
+  const livePreviewRootRef = useRef<HTMLDivElement>(null);
+  const isolatedFrameRef = useRef<HTMLIFrameElement>(null);
 
   // ── FLIP animation: grow from original card position to centered fixed layout ──
   const cardRef = useRef<HTMLElement>(null);
@@ -107,16 +108,7 @@ export function AnimationCard({
   };
 
   useLayoutEffect(() => {
-    if (!prevRectRef.current || !cardRef.current) {
-      // Card can close via backdrop/Escape without going through the card button.
-      // In that case there is no FLIP origin rect; clear reserved slot on next frame.
-      if (!isMaximized && placeholderHeight !== null) {
-        requestAnimationFrame(() => {
-          setPlaceholderHeight(null);
-        });
-      }
-      return;
-    }
+    if (!prevRectRef.current || !cardRef.current) return;
 
     const first = prevRectRef.current;
     const finalRect = cardRef.current.getBoundingClientRect();
@@ -187,6 +179,22 @@ export function AnimationCard({
         });
       });
     }
+  }, [isMaximized]);
+
+  // Card can close via backdrop/Escape without going through the card button.
+  // In that case there is no FLIP origin rect; clear the reserved slot.
+  useEffect(() => {
+    if (isMaximized) return;
+    if (prevRectRef.current) return;
+    if (placeholderHeight === null) return;
+
+    const frameId = requestAnimationFrame(() => {
+      setPlaceholderHeight(null);
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
   }, [isMaximized, placeholderHeight]);
   const iconSize = isMaximized ? "size-4" : "size-3.5";
 
@@ -218,6 +226,43 @@ export function AnimationCard({
 
     setTimeout(() => setCopyState("idle"), 1800);
   };
+
+  const replayAnimations = (root: HTMLElement | null): void => {
+    if (!root) return;
+
+    const targets = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+    const seenAnimations = new Set<Animation>();
+
+    for (const target of targets) {
+      if (typeof target.getAnimations !== "function") continue;
+      for (const animation of target.getAnimations()) {
+        seenAnimations.add(animation);
+      }
+    }
+
+    for (const animation of seenAnimations) {
+      animation.cancel();
+      animation.play();
+    }
+  };
+
+  const dispatchReplayEvent = (target: EventTarget | null): void => {
+    if (!target) return;
+    target.dispatchEvent(new CustomEvent("demo:replay"));
+  };
+
+  const handleReplay = () => {
+    if (source === "database") {
+      const frame = isolatedFrameRef.current;
+      const frameWindow = frame?.contentWindow ?? null;
+      frameWindow?.postMessage({ type: "demo:replay" }, "*");
+      return;
+    }
+
+    replayAnimations(livePreviewRootRef.current);
+    dispatchReplayEvent(livePreviewRootRef.current);
+  };
+
   const slotStyle: CSSProperties | undefined =
     isMaximized && placeholderHeight !== null
       ? { minHeight: `${placeholderHeight}px` }
@@ -309,7 +354,7 @@ export function AnimationCard({
           }`}
         >
           <div
-            key={`${id}-${replayKey}`}
+            ref={livePreviewRootRef}
             data-live-demo-root={id}
             className={`flex h-full items-center justify-center ${
               source !== "tailwind" ? "w-full" : ""
@@ -330,13 +375,13 @@ export function AnimationCard({
                 {children}
               </>
             ) : source === "database" && liveDatabaseFiles ? (
-              <IsolatedDemoFrame files={liveDatabaseFiles} />
+              <IsolatedDemoFrame ref={isolatedFrameRef} files={liveDatabaseFiles} />
             ) : (
               children
             )}
           </div>
           <button
-            onClick={() => setReplayKey((value) => value + 1)}
+            onClick={handleReplay}
             className={`${ACTION_BTN_BASE} ${ACTION_BTN_HOVER} bg-surface-card-action text-text-secondary absolute top-3 left-3 z-20 ${
               isMaximized ? "px-2.5 py-1.5 text-xs" : "p-1.5"
             }`}
@@ -418,6 +463,7 @@ export function AnimationCard({
           id={id}
           title={title}
           value={liveCode}
+          baselineValue={metadata.code}
           onChange={setLiveCode}
           source={source}
           themeMode={themeMode}

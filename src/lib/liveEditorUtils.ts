@@ -23,7 +23,6 @@ export interface LiveDatabaseFiles {
   css: string;
   js: string;
   tailwindCss: string;
-  meta: string;
 }
 
 type LiveDatabaseSection = keyof LiveDatabaseFiles;
@@ -34,7 +33,6 @@ function toLiveDatabaseSection(line: string): LiveDatabaseSection | null {
   if (/^\/\*\s*tailwind css\s*\*\/$/i.test(marker)) return "tailwindCss";
   if (/^\/\*\s*css\s*\*\/$/i.test(marker)) return "css";
   if (/^\/\/\s*javascript\s*$/i.test(marker)) return "js";
-  if (/^\/\/\s*meta\s*$/i.test(marker)) return "meta";
   return null;
 }
 
@@ -44,7 +42,6 @@ export function toLiveDatabaseFiles(input: string): LiveDatabaseFiles {
     css: "",
     js: "",
     tailwindCss: "",
-    meta: "",
   };
 
   if (!input) return files;
@@ -73,10 +70,20 @@ export function toLiveDatabaseFiles(input: string): LiveDatabaseFiles {
     files.css = "";
     files.js = "";
     files.tailwindCss = "";
-    files.meta = "";
   }
 
   return files;
+}
+
+export function toLiveDatabaseCode(files: LiveDatabaseFiles): string {
+  const sections = [
+    `<!-- HTML -->\n${files.html}`,
+    `/* Tailwind CSS */\n${files.tailwindCss}`,
+    `/* CSS */\n${files.css}`,
+    `// JavaScript\n${files.js}`,
+  ];
+
+  return sections.join("\n\n");
 }
 
 export function toLiveTailwindMarkup(input: string): string | null {

@@ -35,7 +35,83 @@ const INITIAL_CATEGORY_FORM: CategoryFormState = {
 };
 
 const DEFAULT_NEW_DEMO_HTML =
-  "<button class=\"rounded-xl bg-accent-brand px-4 py-2 font-semibold text-text-inverse\">\n  Demo action\n</button>";
+  "<div class=\"replay-demo-shell\">\n  <button id=\"demo-replay-chip\" class=\"replay-demo-chip\">Replay foreground pulse</button>\n</div>";
+const DEFAULT_NEW_DEMO_CSS = `.replay-demo-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 160px;
+  width: min(360px, 92%);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+  background: color-mix(in oklab, Canvas 92%, transparent);
+}
+
+.replay-demo-bg {
+  position: absolute;
+  inset: -22%;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(22px) saturate(120%);
+  opacity: 0.9;
+  background:
+    radial-gradient(circle at 24% 20%, #22d3ee 0, transparent 48%),
+    radial-gradient(circle at 76% 20%, #f97316 0, transparent 44%),
+    radial-gradient(circle at 50% 82%, #a855f7 0, transparent 46%);
+  animation: replay-demo-drift 12s ease-in-out infinite alternate;
+}
+
+.replay-demo-chip {
+  position: relative;
+  z-index: 1;
+  border: 1px solid color-mix(in oklab, currentColor 25%, transparent);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font: 600 14px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: CanvasText;
+  background: color-mix(in oklab, Canvas 80%, transparent);
+  box-shadow: 0 16px 40px -30px color-mix(in oklab, #22d3ee 75%, transparent);
+}
+
+@keyframes replay-demo-drift {
+  from {
+    transform: rotate(-4deg) scale(1);
+  }
+  to {
+    transform: rotate(4deg) scale(1.08);
+  }
+}`;
+const DEFAULT_NEW_DEMO_JS = `const root = document.getElementById("demo-root");
+const chip = document.getElementById("demo-replay-chip");
+
+if (root && !root.querySelector(".replay-demo-bg")) {
+  const background = document.createElement("div");
+  background.className = "replay-demo-bg";
+  root.querySelector(".replay-demo-shell")?.prepend(background);
+}
+
+let chipAnimation;
+
+const playChipPulse = () => {
+  if (!chip || typeof chip.animate !== "function") return;
+
+  chipAnimation?.cancel();
+  chipAnimation = chip.animate(
+    [
+      { transform: "translateY(0) scale(1)", offset: 0 },
+      { transform: "translateY(-4px) scale(1.04)", offset: 0.45 },
+      { transform: "translateY(0) scale(1)", offset: 1 },
+    ],
+    { duration: 760, easing: "cubic-bezier(.2,.65,.2,1)", fill: "both" },
+  );
+};
+
+playChipPulse();
+
+// Replay only the foreground chip animation; keep the inserted colorful background untouched.
+window.demoReplay?.onReplay(playChipPulse);`;
 
 async function apiRequest<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -84,9 +160,11 @@ function createDefaultFiles() {
     content:
       fileKind === "html"
         ? DEFAULT_NEW_DEMO_HTML
-        : fileKind === "meta"
-          ? "{}"
-          : "",
+        : fileKind === "css"
+          ? DEFAULT_NEW_DEMO_CSS
+          : fileKind === "js"
+            ? DEFAULT_NEW_DEMO_JS
+            : "",
   }));
 }
 

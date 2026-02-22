@@ -5,6 +5,7 @@ interface LiveCodeEditorProps {
   id: string;
   title: string;
   value: string;
+  baselineValue: string;
   onChange: (value: string) => void;
   source: DemoSource;
   themeMode: "light" | "dark";
@@ -21,6 +22,7 @@ export function LiveCodeEditor({
   id,
   title,
   value,
+  baselineValue,
   onChange,
   source,
   themeMode,
@@ -65,6 +67,7 @@ export function LiveCodeEditor({
               id={id}
               title={title}
               value={value}
+              baselineValue={baselineValue}
               onChange={onChange}
               source={source}
               themeMode={themeMode}

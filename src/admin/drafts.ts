@@ -7,7 +7,6 @@ function emptyFileMap(): Record<DemoFileKind, string> {
     css: "",
     js: "",
     tailwind_css: "",
-    meta: "{}",
   };
 }
 

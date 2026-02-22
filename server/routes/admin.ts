@@ -8,7 +8,7 @@ import { isAdminEmail } from "../env";
 import { createId, toSlug } from "../utils";
 
 const categoryTypeSchema = z.enum(["css", "tailwind"]);
-const fileKindSchema = z.enum(["html", "css", "js", "tailwind_css", "meta"]);
+const fileKindSchema = z.enum(["html", "css", "js", "tailwind_css"]);
 
 const createCategorySchema = z.object({
   type: categoryTypeSchema,

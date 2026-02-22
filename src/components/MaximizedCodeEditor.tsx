@@ -1,41 +1,322 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { css } from "@codemirror/lang-css";
 import { html } from "@codemirror/lang-html";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
+import {
+  toLiveDatabaseCode,
+  toLiveDatabaseFiles,
+  type LiveDatabaseFiles,
+} from "../lib/liveEditorUtils";
 import type { DemoSource } from "../types/demo";
 
 interface MaximizedCodeEditorProps {
   id: string;
   title: string;
   value: string;
+  baselineValue: string;
   onChange: (value: string) => void;
   source: DemoSource;
   themeMode: "light" | "dark";
+}
+
+type DatabasePanelKind = keyof LiveDatabaseFiles;
+
+const DATABASE_PANEL_ORDER: DatabasePanelKind[] = [
+  "html",
+  "css",
+  "js",
+  "tailwindCss",
+];
+
+const DATABASE_PANEL_LABEL: Record<DatabasePanelKind, string> = {
+  html: "HTML",
+  css: "CSS",
+  js: "JavaScript",
+  tailwindCss: "Tailwind CSS",
+};
+
+const CODEMIRROR_SETUP = {
+  foldGutter: false,
+  lineNumbers: true,
+  highlightActiveLineGutter: false,
+  highlightActiveLine: false,
+} as const;
+
+const EDITOR_CLASS =
+  "code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none";
+
+function countLines(value: string): number {
+  return value.split(/\r\n|\r|\n/).length;
+}
+
+function toDatabaseColumns(maximizedPanel: DatabasePanelKind | null): string {
+  if (!maximizedPanel) return "repeat(4, minmax(220px, 1fr))";
+
+  return DATABASE_PANEL_ORDER.map((panel) =>
+    panel === maximizedPanel ? "minmax(420px, 1fr)" : "56px",
+  ).join(" ");
+}
+
+function toPanelExtensions(panel: DatabasePanelKind) {
+  if (panel === "html") {
+    return [html({ autoCloseTags: true, matchClosingTags: true })];
+  }
+
+  if (panel === "css" || panel === "tailwindCss") {
+    return [css()];
+  }
+
+  return [];
 }
 
 export function MaximizedCodeEditor({
   id,
   title,
   value,
+  baselineValue,
   onChange,
   source,
   themeMode,
 }: MaximizedCodeEditorProps) {
-  const maximizedEditorLineCount = useMemo(() => {
-    const lineCount = value.split(/\r\n|\r|\n/).length;
-    return Math.max(32, lineCount + 2);
-  }, [value]);
+  const [maximizedPanel, setMaximizedPanel] = useState<DatabasePanelKind | null>(
+    null,
+  );
+  const [panelCopyState, setPanelCopyState] = useState<
+    Record<DatabasePanelKind, "idle" | "copied" | "failed">
+  >({
+    html: "idle",
+    css: "idle",
+    js: "idle",
+    tailwindCss: "idle",
+  });
+  const databaseFiles = useMemo(
+    () => (source === "database" ? toLiveDatabaseFiles(value) : null),
+    [source, value],
+  );
+  const baselineDatabaseFiles = useMemo(
+    () => (source === "database" ? toLiveDatabaseFiles(baselineValue) : null),
+    [baselineValue, source],
+  );
+  const maximizedEditorLineCount = useMemo(
+    () => Math.max(32, countLines(value) + 2),
+    [value],
+  );
   const maximizedEditorHeightPx = maximizedEditorLineCount * 22;
+  const databaseEditorHeightPx = useMemo(() => {
+    if (!databaseFiles) return 0;
+    const maxLineCount = Math.max(
+      ...DATABASE_PANEL_ORDER.map((panel) => countLines(databaseFiles[panel])),
+    );
+    return Math.max(18, maxLineCount + 2) * 22;
+  }, [databaseFiles]);
 
-  const editorExtensions = useMemo(
-    () =>
-      source === "css"
-        ? [css()]
-        : [html({ autoCloseTags: true, matchClosingTags: true })],
-    [source],
+  const editorExtensions = useMemo(() => {
+    if (source === "css") return [css()];
+    return [html({ autoCloseTags: true, matchClosingTags: true })];
+  }, [source]);
+  const databaseColumns = useMemo(
+    () => toDatabaseColumns(maximizedPanel),
+    [maximizedPanel],
   );
   const editorTheme = themeMode === "dark" ? githubDark : githubLight;
+
+  if (source === "database" && databaseFiles) {
+    const updatePanel = (panel: DatabasePanelKind, nextValue: string) => {
+      onChange(
+        toLiveDatabaseCode({
+          ...databaseFiles,
+          [panel]: nextValue,
+        }),
+      );
+    };
+
+    const resetPanel = (panel: DatabasePanelKind) => {
+      updatePanel(panel, baselineDatabaseFiles?.[panel] ?? "");
+    };
+
+    const copyPanel = async (panel: DatabasePanelKind) => {
+      try {
+        await navigator.clipboard.writeText(databaseFiles[panel]);
+        setPanelCopyState((current) => ({ ...current, [panel]: "copied" }));
+      } catch {
+        setPanelCopyState((current) => ({ ...current, [panel]: "failed" }));
+      }
+
+      window.setTimeout(() => {
+        setPanelCopyState((current) => ({ ...current, [panel]: "idle" }));
+      }, 1500);
+    };
+
+    return (
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {DATABASE_PANEL_ORDER.map((panel) => (
+            <button
+              key={panel}
+              type="button"
+              onClick={() =>
+                setMaximizedPanel((current) => (current === panel ? null : panel))
+              }
+              className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${
+                maximizedPanel === panel
+                  ? "border-accent-brand bg-accent-soft text-text-primary"
+                  : "border-border-subtle bg-surface-control text-text-secondary"
+              }`}
+            >
+              {DATABASE_PANEL_LABEL[panel]}
+            </button>
+          ))}
+          {maximizedPanel ? (
+            <button
+              type="button"
+              onClick={() => setMaximizedPanel(null)}
+              className="rounded-md border border-border-subtle bg-surface-control px-2 py-1 text-[11px] font-semibold text-text-secondary"
+            >
+              Show all
+            </button>
+          ) : null}
+        </div>
+
+        <div className="overflow-x-auto pb-1">
+          <div
+            className="grid min-w-[980px] gap-2.5"
+            style={{ gridTemplateColumns: databaseColumns }}
+          >
+            {DATABASE_PANEL_ORDER.map((panel) => {
+              const compressed = maximizedPanel !== null && maximizedPanel !== panel;
+              const panelLabel = DATABASE_PANEL_LABEL[panel];
+              const copyState = panelCopyState[panel];
+
+              return (
+                <section
+                  key={panel}
+                  className="border-border-strong bg-surface-code overflow-hidden rounded-lg border"
+                >
+                  {compressed ? (
+                    <div className="flex h-[180px] flex-col items-center gap-1.5 px-1 py-2">
+                      <button
+                        type="button"
+                        onClick={() => setMaximizedPanel(panel)}
+                        className="w-full rounded border border-border-subtle bg-surface-control px-1 py-1 text-[10px] font-semibold text-text-secondary"
+                        title={`Expand ${panelLabel}`}
+                        aria-label={`Expand ${panelLabel} column`}
+                      >
+                        Max
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void copyPanel(panel);
+                        }}
+                        className={`w-full rounded border px-1 py-1 text-[10px] font-semibold ${
+                          copyState === "copied"
+                            ? "border-status-success/50 text-status-success"
+                            : copyState === "failed"
+                              ? "border-status-error/50 text-status-error"
+                              : "border-border-subtle bg-surface-control text-text-secondary"
+                        }`}
+                        title={`Copy ${panelLabel}`}
+                        aria-label={`Copy ${panelLabel} code`}
+                      >
+                        {copyState === "copied"
+                          ? "OK"
+                          : copyState === "failed"
+                            ? "Err"
+                            : "Copy"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => resetPanel(panel)}
+                        className="w-full rounded border border-border-subtle bg-surface-control px-1 py-1 text-[10px] font-semibold text-text-secondary"
+                        title={`Reset ${panelLabel}`}
+                        aria-label={`Reset ${panelLabel} code`}
+                      >
+                        Reset
+                      </button>
+                      <span
+                        className="text-text-tertiary mt-auto text-[10px] font-semibold"
+                        aria-hidden
+                      >
+                        {panelLabel}
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="border-border-subtle bg-surface-card-subtle flex items-center justify-between border-b px-2 py-1.5">
+                        <p className="text-text-secondary text-[11px] font-semibold uppercase tracking-wide">
+                          {panelLabel}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void copyPanel(panel);
+                            }}
+                            className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                              copyState === "copied"
+                                ? "border-status-success/50 text-status-success"
+                                : copyState === "failed"
+                                  ? "border-status-error/50 text-status-error"
+                                  : "border-border-subtle bg-surface-control text-text-secondary"
+                            }`}
+                            title={`Copy ${panelLabel}`}
+                            aria-label={`Copy ${panelLabel} code`}
+                          >
+                            {copyState === "copied"
+                              ? "Copied"
+                              : copyState === "failed"
+                                ? "Failed"
+                                : "Copy"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => resetPanel(panel)}
+                            className="rounded border border-border-subtle bg-surface-control px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary"
+                            title={`Reset ${panelLabel}`}
+                            aria-label={`Reset ${panelLabel} code`}
+                          >
+                            Reset
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setMaximizedPanel((current) =>
+                                current === panel ? null : panel,
+                              )
+                            }
+                            className="rounded border border-border-subtle bg-surface-control px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary"
+                          >
+                            {maximizedPanel === panel ? "Restore" : "Max"}
+                          </button>
+                        </div>
+                      </div>
+                      <span id={`${id}-${panel}-code-editor-label`} className="sr-only">
+                        Live {panelLabel} editor for {title}
+                      </span>
+                      <CodeMirror
+                        id={`${id}-${panel}-code-editor`}
+                        value={databaseFiles[panel]}
+                        onChange={(nextValue) => updatePanel(panel, nextValue)}
+                        extensions={toPanelExtensions(panel)}
+                        theme={editorTheme}
+                        basicSetup={CODEMIRROR_SETUP}
+                        height={`${databaseEditorHeightPx}px`}
+                        maxHeight={`${databaseEditorHeightPx}px`}
+                        className={EDITOR_CLASS}
+                        aria-labelledby={`${id}-${panel}-code-editor-label`}
+                        aria-describedby={`${id}-code-hint`}
+                      />
+                    </>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <CodeMirror
@@ -44,15 +325,10 @@ export function MaximizedCodeEditor({
       onChange={onChange}
       extensions={editorExtensions}
       theme={editorTheme}
-      basicSetup={{
-        foldGutter: false,
-        lineNumbers: true,
-        highlightActiveLineGutter: false,
-        highlightActiveLine: false,
-      }}
+      basicSetup={CODEMIRROR_SETUP}
       height={`${maximizedEditorHeightPx}px`}
       maxHeight={`${maximizedEditorHeightPx}px`}
-      className="code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none"
+      className={EDITOR_CLASS}
       aria-labelledby={`${id}-code-editor-label`}
       aria-describedby={`${id}-code-hint`}
       aria-label={`Live code editor for ${title}`}

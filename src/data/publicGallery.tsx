@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { IsolatedDemoFrame, type IsolatedDemoFiles } from "../components/IsolatedDemoFrame";
+import { toLiveDatabaseCode } from "../lib/liveEditorUtils";
 import type { Category, CategoryIconName, DemoDifficulty, SupportLevel } from "../types/demo";
 import type { DemoEntry, GalleryDataRuntime, GalleryMode } from "./demoRegistry";
 
@@ -15,7 +16,7 @@ interface PublicCategoryRow {
 
 interface PublicDemoFileRow {
   demoId: string;
-  fileKind: "html" | "css" | "js" | "tailwind_css" | "meta";
+  fileKind: "html" | "css" | "js" | "tailwind_css";
   content: string;
   sortOrder: number;
 }
@@ -86,7 +87,6 @@ function toIsolatedFiles(files: PublicDemoFileRow[]): IsolatedDemoFiles {
     css: "",
     js: "",
     tailwindCss: "",
-    meta: "",
   };
 
   for (const file of files) {
@@ -103,27 +103,12 @@ function toIsolatedFiles(files: PublicDemoFileRow[]): IsolatedDemoFiles {
       case "tailwind_css":
         bundle.tailwindCss = file.content;
         break;
-      case "meta":
-        bundle.meta = file.content;
-        break;
       default:
         break;
     }
   }
 
   return bundle;
-}
-
-function toBundleCode(files: IsolatedDemoFiles): string {
-  const parts = [
-    `<!-- HTML -->\n${files.html}`,
-    `/* Tailwind CSS */\n${files.tailwindCss}`,
-    `/* CSS */\n${files.css}`,
-    `// JavaScript\n${files.js}`,
-    `// Meta\n${files.meta}`,
-  ];
-
-  return parts.filter((part) => part.trim().length > 0).join("\n\n");
 }
 
 function toIsolatedComponent(files: IsolatedDemoFiles): ComponentType {
@@ -217,7 +202,7 @@ export function toGalleryDataByMode(
       categoryId: category.id,
       title: demo.title,
       description: demo.description,
-      code: toBundleCode(files),
+      code: toLiveDatabaseCode(files),
       Component: toIsolatedComponent(files),
       source: "database",
       difficulty: toDifficulty(demo.difficulty),

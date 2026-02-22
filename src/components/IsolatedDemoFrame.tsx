@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { forwardRef, useMemo } from "react";
 import { useTheme } from "../hooks/useTheme";
 import { collectFrameGlobalCss } from "../lib/frameGlobalStyles";
 import { collectFrameThemeCss } from "../lib/frameThemeStyles";
+import { FRAME_REPLAY_HELPER } from "../lib/frameReplayHelper";
 
 export type IsolatedDemoFiles = {
   html: string;
   css: string;
   js: string;
   tailwindCss: string;
-  meta: string;
 };
 
 const NETWORK_GUARD = `
@@ -50,6 +50,7 @@ function buildFrameDoc(
 ): string {
 
   const escapedGuard = escapeScript(NETWORK_GUARD);
+  const escapedReplayHelper = escapeScript(FRAME_REPLAY_HELPER);
   const escapedJs = escapeScript(files.js);
   const inlineStyles = `${files.tailwindCss}\n${files.css}`;
   const html = files.html || "<div>No HTML content provided.</div>";
@@ -87,6 +88,7 @@ function buildFrameDoc(
 <body>
   <div id="demo-root">${html}</div>
   <script>${escapedGuard}</script>
+  <script>${escapedReplayHelper}</script>
   <script>
     try {
 ${escapedJs}
@@ -105,7 +107,10 @@ interface IsolatedDemoFrameProps {
   files: IsolatedDemoFiles;
 }
 
-export function IsolatedDemoFrame({ files }: IsolatedDemoFrameProps) {
+export const IsolatedDemoFrame = forwardRef<
+  HTMLIFrameElement,
+  IsolatedDemoFrameProps
+>(function IsolatedDemoFrame({ files }, ref) {
   const { theme } = useTheme();
   const themeCss = useMemo(() => collectFrameThemeCss(theme), [theme]);
   const globalCss = useMemo(() => collectFrameGlobalCss(), []);
@@ -116,6 +121,7 @@ export function IsolatedDemoFrame({ files }: IsolatedDemoFrameProps) {
 
   return (
     <iframe
+      ref={ref}
       title="Isolated demo preview"
       srcDoc={srcDoc}
       sandbox="allow-scripts"
@@ -123,4 +129,4 @@ export function IsolatedDemoFrame({ files }: IsolatedDemoFrameProps) {
       className="bg-demo-preview-bg h-full w-full rounded-xl border-0"
     />
   );
-}
+});

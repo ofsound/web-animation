@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTheme } from "../hooks/useTheme";
 import { collectFrameGlobalCss } from "../lib/frameGlobalStyles";
 import { collectFrameThemeCss } from "../lib/frameThemeStyles";
+import { FRAME_REPLAY_HELPER } from "../lib/frameReplayHelper";
 import type { DemoDraft } from "./types";
 
 const NETWORK_GUARD = `
@@ -46,6 +47,7 @@ function buildPreviewDoc(
 
   const escapedJs = escapeScript(js);
   const escapedGuard = escapeScript(NETWORK_GUARD);
+  const escapedReplayHelper = escapeScript(FRAME_REPLAY_HELPER);
 
   return `<!doctype html>
 <html lang="en" class="${themeClass}">
@@ -80,6 +82,7 @@ function buildPreviewDoc(
 <body>
   <div id="demo-root">${html}</div>
   <script>${escapedGuard}</script>
+  <script>${escapedReplayHelper}</script>
   <script>
   try {
 ${escapedJs}

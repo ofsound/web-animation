@@ -1,5 +1,5 @@
 export type DemoSource = "css" | "tailwind";
-export type DemoFileKind = "html" | "css" | "js" | "tailwind_css" | "meta";
+export type DemoFileKind = "html" | "css" | "js" | "tailwind_css";
 
 export interface AdminUser {
   id: string;
@@ -61,7 +61,6 @@ export const FILE_KIND_ORDER: DemoFileKind[] = [
   "css",
   "js",
   "tailwind_css",
-  "meta",
 ];
 
 export const FILE_KIND_LABEL: Record<DemoFileKind, string> = {
@@ -69,5 +68,4 @@ export const FILE_KIND_LABEL: Record<DemoFileKind, string> = {
   css: "CSS",
   js: "JavaScript",
   tailwind_css: "Tailwind CSS",
-  meta: "Meta",
 };

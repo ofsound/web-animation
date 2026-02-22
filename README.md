@@ -4,6 +4,20 @@ A React + Vite gallery backed by a Hono API and Postgres.
 
 The gallery now loads **only** from published demo records in the database. Each demo is rendered inside an isolated sandbox frame from stored demo files (`html`, `css`, `js`, `tailwind_css`, `meta`). There is no local file-based demo fallback in the app.
 
+## Replay Hook For Demo JS
+
+Database demos running in the sandbox frame can subscribe to the gallery replay button without remounting the iframe:
+
+```js
+const restartForeground = () => {
+  // restart only the parts you want to replay
+};
+
+window.demoReplay?.onReplay(restartForeground);
+```
+
+Use this pattern to replay foreground timelines while leaving inserted background layers stable.
+
 ## Tech Stack
 
 - React 19 + TypeScript
