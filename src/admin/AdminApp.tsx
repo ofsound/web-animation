@@ -25,6 +25,8 @@ type CategoryFormState = {
   description: string;
 };
 
+const API_TIMEOUT_MS = 15000;
+
 const INITIAL_CATEGORY_FORM: CategoryFormState = {
   type: "tailwind" as const,
   label: "",
@@ -119,11 +121,24 @@ async function apiRequest<T>(url: string, init?: RequestInit): Promise<T> {
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(url, {
-    credentials: "include",
-    ...init,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      credentials: "include",
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`Request timed out after ${API_TIMEOUT_MS / 1000}s (${url})`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
@@ -155,7 +170,7 @@ function toErrorMessage(error: unknown): string {
 
 async function signIn(email: string, password: string): Promise<void> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+  const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
     const response = await fetch("/api/admin/sign-in", {
@@ -345,6 +360,7 @@ export default function AdminApp() {
       try {
         const sessionResponse = await fetch("/api/admin/session", {
           credentials: "include",
+          signal: AbortSignal.timeout(API_TIMEOUT_MS),
         });
 
         if (ignore) return;
