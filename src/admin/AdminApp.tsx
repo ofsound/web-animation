@@ -154,6 +154,58 @@ function toErrorMessage(error: unknown): string {
   return "Unexpected error";
 }
 
+async function signInWithFallback(email: string, password: string): Promise<void> {
+  const endpoints = ["/api/auth/sign-in/email", "/api/auth/email"];
+  const payload = JSON.stringify({ email, password });
+  let lastError = "Unable to sign in";
+
+  for (const endpoint of endpoints) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: payload,
+        signal: controller.signal,
+      });
+
+      if (response.status === 404) {
+        continue;
+      }
+
+      if (!response.ok) {
+        try {
+          const json = (await response.json()) as { message?: string; error?: string };
+          lastError =
+            (typeof json.message === "string" && json.message) ||
+            (typeof json.error === "string" && json.error) ||
+            `Sign-in failed (${response.status})`;
+        } catch {
+          lastError = `Sign-in failed (${response.status})`;
+        }
+        throw new Error(lastError);
+      }
+
+      return;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        lastError = "Sign-in timed out. Please try again.";
+      } else if (error instanceof Error) {
+        lastError = error.message || lastError;
+      }
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  throw new Error(lastError);
+}
+
 function createDefaultFiles() {
   return FILE_KIND_ORDER.map((fileKind) => ({
     fileKind,
@@ -404,14 +456,7 @@ export default function AdminApp() {
     event.preventDefault();
 
     await runAction("signin", async () => {
-      const result = await authClient.signIn.email({
-        email: signInEmail,
-        password: signInPassword,
-      });
-
-      if (result.error) {
-        throw new Error(result.error.message ?? "Unable to sign in");
-      }
+      await signInWithFallback(signInEmail, signInPassword);
 
       const session = await apiRequest<SessionResponse>("/api/admin/session");
       setUser(session.user);
