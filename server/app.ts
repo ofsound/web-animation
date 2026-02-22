@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { auth } from "./auth.js";
@@ -28,13 +28,18 @@ app.use(
   }),
 );
 
+app.get("/health", (c) => c.json({ status: "ok" }));
 app.get("/api/health", (c) => c.json({ status: "ok" }));
 
-app.all("/api/auth/*", async (c) => {
+const authHandler = async (c: Context) => {
   return auth.handler(c.req.raw);
-});
+};
+app.all("/auth/*", authHandler);
+app.all("/api/auth/*", authHandler);
 
+app.route("/admin", adminRoutes);
 app.route("/api/admin", adminRoutes);
+app.route("/public", publicRoutes);
 app.route("/api/public", publicRoutes);
 
 app.notFound((c) => {
