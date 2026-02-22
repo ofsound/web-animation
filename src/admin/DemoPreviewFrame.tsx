@@ -42,7 +42,7 @@ function buildPreviewDoc(
   globalCss: string,
 ): string {
   const html = draft.files.html || "<div>No HTML provided.</div>";
-  const css = `${draft.files.tailwind_css}\n${draft.files.css}`;
+  const css = draft.files.css;
   const js = draft.files.js;
 
   const escapedJs = escapeScript(js);

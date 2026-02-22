@@ -398,6 +398,7 @@ body {
 .code-panel .database-code-editor .cm-scroller {
   overflow: auto !important;
   scrollbar-gutter: stable both-edges;
+  padding-bottom: 12px;
 }
 .code-panel .database-code-editor .cm-content {
   min-width: max-content;

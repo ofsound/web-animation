@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:api": "tsx server/dev.ts",
     "build": "tsc -b && vite build",
+    "build:vercel": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "knip": "knip",
@@ -16,6 +17,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:relocate-demo-animation-css": "tsx server/scripts/relocate-demo-animation-css.ts",
+    "db:fix-broken-css-react-demos": "tsx server/scripts/fix-broken-css-react-demos.ts",
+    "db:remove-tailwind-css-files": "tsx server/scripts/remove-tailwind-css-files.ts",
     "env:check": "tsx server/scripts/check-env.ts",
     "admin:seed": "BETTER_AUTH_ALLOW_SIGNUP=true tsx server/scripts/ensure-admin.ts"
   },

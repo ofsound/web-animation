@@ -112,3 +112,51 @@ If no demos are published, the gallery will be empty.
 ### BrowserRouter Hosting Note
 
 Because the app uses `BrowserRouter`, production hosting must rewrite non-asset requests to `index.html` so direct deep links resolve correctly.
+
+## Deploy To Vercel (GitHub Auto Deploy)
+
+This repo is configured for Vercel with `/Users/ben/Dev/REACT/web-animation/vercel.json`:
+
+- `buildCommand`: `npm run build:vercel` (uses `vite build`)
+- `outputDirectory`: `dist`
+- SPA fallback route rewrite for BrowserRouter deep links
+
+### 1) Push this repo to GitHub
+
+1. Commit and push your branch to GitHub.
+2. In Vercel, choose **Add New Project** and import the GitHub repo.
+3. Keep auto-deploy enabled (Vercel deploys each push automatically; Production deploys from your configured production branch).
+
+### 2) Reuse your existing Neon database (exact same DB)
+
+In Vercel Project Settings -> Environment Variables, set:
+
+- `DATABASE_URL` = the exact same value currently in your local `.env`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL` = your Vercel site URL (or custom domain), e.g. `https://your-app.vercel.app`
+- `BETTER_AUTH_TRUSTED_ORIGINS` = comma-separated origins including your Vercel URL/domain
+- `BETTER_AUTH_ALLOW_SIGNUP` = `false` (recommended)
+- `ADMIN_EMAIL`
+- `ADMIN_NAME`
+- `ADMIN_PASSWORD`
+
+Notes:
+
+- Do not create a new Neon database URL if you want the same data.
+- Set these for `Production` (and `Preview` if you want preview deployments to access the same DB).
+
+### 3) Run DB migrations against that same production DB
+
+From your machine (with env values loaded for the same `DATABASE_URL`):
+
+```bash
+npm run db:migrate
+```
+
+If you have not created the admin user in that DB yet:
+
+```bash
+npm run admin:seed
+```
+
+After this, each push to GitHub triggers a new Vercel deployment automatically.

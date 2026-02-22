@@ -136,10 +136,14 @@ function App() {
       new Map(maximizedDemoQueue.map(({ id }, index) => [id, index] as const)),
     [maximizedDemoQueue],
   );
-  const { categories, demosByCategory } = useMemo(
+  const { categories, demosByCategory, demoCategoryById } = useMemo(
     () => galleryDataByMode[effectiveGalleryMode],
     [effectiveGalleryMode, galleryDataByMode],
   );
+  const activeMaximizedDemoCategoryId = useMemo(() => {
+    if (!activeMaximizedDemoId) return null;
+    return demoCategoryById.get(activeMaximizedDemoId) ?? null;
+  }, [activeMaximizedDemoId, demoCategoryById]);
   const activeMaximizedDemoIndex = useMemo(() => {
     if (!activeMaximizedDemoId) return -1;
     return maximizedDemoIndexById.get(activeMaximizedDemoId) ?? -1;
@@ -534,10 +538,26 @@ function App() {
         />
       )}
 
-      <main className="bg-app-main relative ml-20 pt-7 pb-24 sm:ml-72 sm:pt-10">
+      <main
+        className={
+          isRemoteGalleryLoading
+            ? "relative ml-20 min-h-screen bg-black sm:ml-72"
+            : "bg-app-main relative ml-20 pt-7 pb-24 sm:ml-72 sm:pt-10"
+        }
+      >
         {isRemoteGalleryLoading ? (
-          <div className="px-6 py-10 sm:px-10">
-            <p className="font-mono text-sm">Loading gallery…</p>
+          <div className="px-6 sm:px-10">
+            <div className="grid min-h-screen place-items-center">
+              <div className="w-full max-w-sm rounded-2xl border border-border-strong/70 bg-surface-card/85 px-8 py-10 text-center shadow-glow-subtle backdrop-blur-sm">
+                <div
+                  className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-accent-brand/25 border-t-accent-brand motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+                <p className="mt-4 font-mono text-xs tracking-[0.18em] text-text-secondary uppercase">
+                  Loading gallery…
+                </p>
+              </div>
+            </div>
           </div>
         ) : null}
         {!isRemoteGalleryLoading && remoteGalleryError ? (
@@ -556,7 +576,7 @@ function App() {
                 category={category}
                 eager={
                   index === 0 ||
-                  activeMaximizedDemoId !== null ||
+                  activeMaximizedDemoCategoryId === category.id ||
                   preloadedSectionIds.has(category.id)
                 }
                 surfaceTone={index % 2 === 0 ? "odd" : "even"}

@@ -6,7 +6,6 @@ function emptyFileMap(): Record<DemoFileKind, string> {
     html: "<div class=\"rounded-xl border border-border-subtle bg-surface-card p-4\">\n  Edit HTML here\n</div>",
     css: "",
     js: "",
-    tailwind_css: "",
   };
 }
 
@@ -16,9 +15,12 @@ function getDraftStorageKey(demoId: string): string {
 
 export function toDemoDraft(demo: DemoRecord): DemoDraft {
   const files = emptyFileMap();
+  const editableKinds = new Set(FILE_KIND_ORDER);
 
   for (const file of demo.files) {
-    files[file.fileKind] = file.content;
+    if (editableKinds.has(file.fileKind as DemoFileKind)) {
+      files[file.fileKind as DemoFileKind] = file.content;
+    }
   }
 
   return {

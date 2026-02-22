@@ -106,7 +106,7 @@ export function Sidebar({
               className={`flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-sm font-semibold tracking-wide transition-all sm:justify-start sm:px-3 ${
                 isActive
                   ? "border-menu-item-border-active bg-menu-item-bg-active text-text-primary"
-                  : "border-button-neutral-border text-text-secondary bg-transparent"
+                  : "border-transparent text-text-secondary bg-transparent"
               }`}
               aria-current={isActive ? "true" : undefined}
             >

@@ -8,6 +8,7 @@ import {
   toLiveDatabaseFiles,
 } from "../lib/liveEditorUtils";
 import type { DemoSource } from "../types/demo";
+import { IconCheck, IconCopy, IconX } from "./AnimationCardIcons";
 import { MaximizedSingleCodeEditor } from "./MaximizedSingleCodeEditor";
 
 interface MaximizedCodeEditorProps {
@@ -45,8 +46,7 @@ const EDITOR_CLASS =
   "code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none";
 
 const EDITOR_CLASS_DATABASE =
-  "code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-xs leading-relaxed focus-visible:outline-none";
-const DATABASE_EDITOR_VIEWPORT_PX = 340;
+  "code-block code-editor text-text-tertiary h-full min-h-0 w-full bg-transparent pr-1 font-mono text-xs leading-relaxed focus-visible:outline-none";
 
 function toDatabaseColumns(maximizedPanel: DatabasePanelKind | null): string {
   if (!maximizedPanel) return "repeat(3, minmax(220px, 1fr))";
@@ -72,7 +72,6 @@ export function MaximizedCodeEditor({
   id,
   title,
   value,
-  baselineValue,
   onChange,
   source,
   themeMode,
@@ -91,10 +90,6 @@ export function MaximizedCodeEditor({
     () => (source === "database" ? toLiveDatabaseFiles(value) : null),
     [source, value],
   );
-  const baselineDatabaseFiles = useMemo(
-    () => (source === "database" ? toLiveDatabaseFiles(baselineValue) : null),
-    [baselineValue, source],
-  );
   const databaseColumns = useMemo(
     () => toDatabaseColumns(maximizedPanel),
     [maximizedPanel],
@@ -111,10 +106,6 @@ export function MaximizedCodeEditor({
       );
     };
 
-    const resetPanel = (panel: DatabasePanelKind) => {
-      updatePanel(panel, baselineDatabaseFiles?.[panel] ?? "");
-    };
-
     const copyPanel = async (panel: DatabasePanelKind) => {
       try {
         await navigator.clipboard.writeText(databaseFiles[panel]);
@@ -129,7 +120,7 @@ export function MaximizedCodeEditor({
     };
 
     return (
-      <div className="space-y-2.5">
+      <div className="flex h-full min-h-0 flex-col gap-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
           {DATABASE_PANEL_ORDER.map((panel) => (
             <button
@@ -158,9 +149,9 @@ export function MaximizedCodeEditor({
           ) : null}
         </div>
 
-        <div className="overflow-x-auto pb-1">
+        <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden pb-1">
           <div
-            className="grid min-w-[740px] gap-2.5"
+            className="grid h-full min-w-[740px] gap-2.5"
             style={{ gridTemplateColumns: databaseColumns }}
           >
             {DATABASE_PANEL_ORDER.map((panel) => {
@@ -171,48 +162,32 @@ export function MaximizedCodeEditor({
               return (
                 <section
                   key={panel}
-                  className="border-border-strong bg-surface-code min-h-0 overflow-hidden rounded-lg border shadow-inner"
+                  className="border-border-strong bg-surface-code flex min-h-0 flex-col overflow-hidden rounded-xl border shadow-inner"
                 >
                   {compressed ? (
                     <div className="flex h-[180px] flex-col items-center gap-1.5 px-1 py-2">
                       <button
                         type="button"
-                        onClick={() => setMaximizedPanel(panel)}
-                        className="w-full rounded border border-border-subtle bg-surface-control px-1 py-1 text-[10px] font-semibold text-text-secondary"
-                        title={`Expand ${panelLabel}`}
-                        aria-label={`Expand ${panelLabel} column`}
-                      >
-                        Max
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => {
                           void copyPanel(panel);
                         }}
-                        className={`w-full rounded border px-1 py-1 text-[10px] font-semibold ${
+                        className={`inline-flex size-7 items-center justify-center rounded border transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
                           copyState === "copied"
                             ? "border-status-success/50 text-status-success"
                             : copyState === "failed"
                               ? "border-status-error/50 text-status-error"
-                              : "border-border-subtle bg-surface-control text-text-secondary"
+                              : "border-border-subtle bg-surface-control text-text-secondary hover:border-button-neutral-border-hover hover:text-text-primary"
                         }`}
                         title={`Copy ${panelLabel}`}
                         aria-label={`Copy ${panelLabel} code`}
                       >
-                        {copyState === "copied"
-                          ? "OK"
-                          : copyState === "failed"
-                            ? "Err"
-                            : "Copy"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => resetPanel(panel)}
-                        className="w-full rounded border border-border-subtle bg-surface-control px-1 py-1 text-[10px] font-semibold text-text-secondary"
-                        title={`Reset ${panelLabel}`}
-                        aria-label={`Reset ${panelLabel} code`}
-                      >
-                        Reset
+                        {copyState === "copied" ? (
+                          <IconCheck className="size-3.5" />
+                        ) : copyState === "failed" ? (
+                          <IconX className="size-3.5" />
+                        ) : (
+                          <IconCopy className="size-3.5" />
+                        )}
                       </button>
                       <span
                         className="text-text-tertiary mt-auto text-[10px] font-semibold"
@@ -223,7 +198,7 @@ export function MaximizedCodeEditor({
                     </div>
                   ) : (
                     <>
-                      <div className="border-border-subtle bg-surface-card-subtle flex items-center justify-between border-b px-2 py-1.5">
+                      <div className="border-border-subtle bg-surface-card-subtle flex items-center justify-between rounded-t-xl border-b px-2 py-1.5">
                         <p className="text-text-secondary text-[11px] font-semibold uppercase tracking-wide">
                           {panelLabel}
                         </p>
@@ -233,60 +208,44 @@ export function MaximizedCodeEditor({
                             onClick={() => {
                               void copyPanel(panel);
                             }}
-                            className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                            className={`inline-flex size-6 items-center justify-center rounded border transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
                               copyState === "copied"
                                 ? "border-status-success/50 text-status-success"
                                 : copyState === "failed"
                                   ? "border-status-error/50 text-status-error"
-                                  : "border-border-subtle bg-surface-control text-text-secondary"
+                                  : "border-border-subtle bg-surface-control text-text-secondary hover:border-button-neutral-border-hover hover:text-text-primary"
                             }`}
                             title={`Copy ${panelLabel}`}
                             aria-label={`Copy ${panelLabel} code`}
                           >
-                            {copyState === "copied"
-                              ? "Copied"
-                              : copyState === "failed"
-                                ? "Failed"
-                                : "Copy"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => resetPanel(panel)}
-                            className="rounded border border-border-subtle bg-surface-control px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary"
-                            title={`Reset ${panelLabel}`}
-                            aria-label={`Reset ${panelLabel} code`}
-                          >
-                            Reset
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setMaximizedPanel((current) =>
-                                current === panel ? null : panel,
-                              )
-                            }
-                            className="rounded border border-border-subtle bg-surface-control px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary"
-                          >
-                            {maximizedPanel === panel ? "Restore" : "Max"}
+                            {copyState === "copied" ? (
+                              <IconCheck className="size-3" />
+                            ) : copyState === "failed" ? (
+                              <IconX className="size-3" />
+                            ) : (
+                              <IconCopy className="size-3" />
+                            )}
                           </button>
                         </div>
                       </div>
                       <span id={`${id}-${panel}-code-editor-label`} className="sr-only">
                         Live {panelLabel} editor for {title}
                       </span>
-                      <CodeMirror
-                        id={`${id}-${panel}-code-editor`}
-                        value={databaseFiles[panel]}
-                        onChange={(nextValue) => updatePanel(panel, nextValue)}
-                        extensions={toPanelExtensions(panel)}
-                        theme={editorTheme}
-                        basicSetup={CODEMIRROR_SETUP}
-                        height={`${DATABASE_EDITOR_VIEWPORT_PX}px`}
-                        maxHeight={`${DATABASE_EDITOR_VIEWPORT_PX}px`}
-                        className={`${EDITOR_CLASS_DATABASE} database-code-editor`}
-                        aria-labelledby={`${id}-${panel}-code-editor-label`}
-                        aria-describedby={`${id}-code-hint`}
-                      />
+                      <div className="min-h-0 flex-1 overflow-hidden rounded-b-xl border-x border-b border-border-subtle">
+                        <CodeMirror
+                          id={`${id}-${panel}-code-editor`}
+                          value={databaseFiles[panel]}
+                          onChange={(nextValue) => updatePanel(panel, nextValue)}
+                          extensions={toPanelExtensions(panel)}
+                          theme={editorTheme}
+                          basicSetup={CODEMIRROR_SETUP}
+                          height="100%"
+                          maxHeight="100%"
+                          className={`${EDITOR_CLASS_DATABASE} database-code-editor`}
+                          aria-labelledby={`${id}-${panel}-code-editor-label`}
+                          aria-describedby={`${id}-code-hint`}
+                        />
+                      </div>
                     </>
                   )}
                 </section>

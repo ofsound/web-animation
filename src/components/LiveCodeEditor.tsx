@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { MaximizedCodeEditor } from "./MaximizedCodeEditor";
 import type { DemoSource } from "../types/demo";
 
 interface LiveCodeEditorProps {
@@ -11,12 +11,6 @@ interface LiveCodeEditorProps {
   themeMode: "light" | "dark";
   isMaximized: boolean;
 }
-
-const MaximizedCodeEditor = lazy(() =>
-  import("./MaximizedCodeEditor").then((module) => ({
-    default: module.MaximizedCodeEditor,
-  })),
-);
 
 export function LiveCodeEditor({
   id,
@@ -31,10 +25,10 @@ export function LiveCodeEditor({
   return (
     <div
       id={`${id}-code-panel`}
-      className={`code-panel relative mb-4 flex min-h-0 flex-1 flex-col overflow-hidden ${
+      className={`code-panel relative flex min-h-0 flex-1 flex-col overflow-hidden ${
         isMaximized
-          ? "mt-0.5 rounded-b-3xl p-6 pt-1"
-          : "mt-1 max-h-[6.5rem] rounded-b-2xl px-4"
+          ? "mb-0 mt-0.5 rounded-b-3xl p-6 pt-1"
+          : "mb-4 mt-1 max-h-[6.5rem] rounded-b-2xl px-4"
       }`}
     >
       <label id={`${id}-code-editor-label`} className="sr-only">
@@ -43,34 +37,20 @@ export function LiveCodeEditor({
       <div
         className={`overflow-hidden ${
           isMaximized
-            ? "pl-0 pr-3 pt-1.5 pb-3"
+            ? "flex h-full min-h-0 flex-col pl-0 pr-3 pt-1.5 pb-3"
             : "border-border-strong bg-surface-code focus-within:border-accent-brand focus-within:ring-accent-brand rounded-lg border shadow-inner focus-within:ring-1 p-2"
         }`}
       >
         {isMaximized ? (
-          <Suspense
-            fallback={
-              <textarea
-                id={`${id}-code-editor`}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className="code-block text-text-tertiary min-h-[16rem] w-full resize-y overflow-auto bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none"
-                aria-labelledby={`${id}-code-editor-label`}
-                aria-describedby={`${id}-code-hint`}
-                spellCheck={false}
-              />
-            }
-          >
-            <MaximizedCodeEditor
-              id={id}
-              title={title}
-              value={value}
-              baselineValue={baselineValue}
-              onChange={onChange}
-              source={source}
-              themeMode={themeMode}
-            />
-          </Suspense>
+          <MaximizedCodeEditor
+            id={id}
+            title={title}
+            value={value}
+            baselineValue={baselineValue}
+            onChange={onChange}
+            source={source}
+            themeMode={themeMode}
+          />
         ) : (
           <textarea
             id={`${id}-code-editor`}
