@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DemoPreviewFrame } from "./DemoPreviewFrame";
 import {
   clearDraftFromStorage,
@@ -237,6 +237,8 @@ export default function AdminApp() {
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedDemoId, setSelectedDemoId] = useState<string | null>(null);
+  const selectedCategoryIdRef = useRef<string | null>(null);
+  const selectedDemoIdRef = useRef<string | null>(null);
 
   const [signInEmail, setSignInEmail] = useState("ben@modernthings.net");
   const [signInPassword, setSignInPassword] = useState("");
@@ -321,7 +323,7 @@ export default function AdminApp() {
         setCategories(nextCategories);
 
         const preferredCategoryId =
-          preferred?.categoryId ?? selectedCategoryId ?? nextCategories[0]?.id ?? null;
+          preferred?.categoryId ?? selectedCategoryIdRef.current ?? nextCategories[0]?.id ?? null;
         const resolvedCategoryId = nextCategories.some((c) => c.id === preferredCategoryId)
           ? preferredCategoryId
           : nextCategories[0]?.id ?? null;
@@ -337,7 +339,8 @@ export default function AdminApp() {
         const demosInResolvedCategory = resolvedCategoryId
           ? nextDemos.slice().sort(compareSort)
           : [];
-        const preferredDemoId = preferred?.demoId ?? selectedDemoId ?? demosInResolvedCategory[0]?.id ?? null;
+        const preferredDemoId =
+          preferred?.demoId ?? selectedDemoIdRef.current ?? demosInResolvedCategory[0]?.id ?? null;
         const resolvedDemoId = demosInResolvedCategory.some((demo) => demo.id === preferredDemoId)
           ? preferredDemoId
           : demosInResolvedCategory[0]?.id ?? null;
@@ -346,8 +349,16 @@ export default function AdminApp() {
         setRefreshing(false);
       }
     },
-    [selectedCategoryId, selectedDemoId],
+    [],
   );
+
+  useEffect(() => {
+    selectedCategoryIdRef.current = selectedCategoryId;
+  }, [selectedCategoryId]);
+
+  useEffect(() => {
+    selectedDemoIdRef.current = selectedDemoId;
+  }, [selectedDemoId]);
 
   useEffect(() => {
     let ignore = false;
