@@ -68,11 +68,35 @@ server/
     ├── check-env.ts
     └── ensure-admin.ts
 api/
-├── [...route].ts               # Catch-all API entry (auth/admin)
+├── auth/
+│   └── [...route].ts           # Better Auth endpoints
+├── admin/
+│   ├── [...route].ts           # Admin catch-all fallback
+│   ├── sign-in.ts              # Explicit sign-in handler
+│   ├── sign-out.ts             # Explicit sign-out handler
+│   ├── session.ts              # Explicit session handler
+│   ├── categories.ts           # Explicit categories list/create handler
+│   ├── categories/
+│   │   ├── [id].ts             # Explicit category patch/delete handler
+│   │   └── reorder.ts          # Explicit category reorder handler
+│   ├── demos.ts                # Explicit demos list/create handler
+│   └── demos/
+│       ├── [id].ts             # Explicit demo patch/delete handler
+│       ├── reorder.ts          # Explicit demo reorder handler
+│       └── [id]/
+│           ├── delete.ts       # Explicit demo delete handler
+│           ├── files.ts        # Explicit demo files upsert handler
+│           └── publish.ts      # Explicit demo publish handler
 ├── health.ts                   # Explicit health endpoint
 └── public/
     └── gallery.ts              # Explicit public gallery endpoint
 ```
+
+### API Routing Strategy
+
+- Vercel uses explicit `api/admin/*` handlers for all admin UI endpoints.
+- `api/admin/[...route].ts` remains as a fallback for non-UI/admin legacy paths.
+- Local development still routes through the shared Hono app in `/Users/ben/Dev/REACT/web-animation/server/app.ts`.
 
 ## Environment
 
