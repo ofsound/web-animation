@@ -5,6 +5,7 @@ import { auth } from "../auth.js";
 import { db } from "../db/client.js";
 import { demoCategories, demoFiles, demos } from "../db/schema.js";
 import { isAdminEmail } from "../env.js";
+import { publishDemo } from "../publishDemo.js";
 import { createId, toSlug } from "../utils.js";
 
 const categoryTypeSchema = z.enum(["css", "tailwind"]);
@@ -70,17 +71,6 @@ const reorderDemosSchema = z.object({
 const upsertFilesSchema = z.object({
   files: z.array(demoFileSchema),
 });
-
-const publishDemoSchema = z.object({
-  categoryId: z.string().min(1),
-  title: z.string().trim().min(1),
-  slug: z.string().trim().min(1).optional(),
-  description: z.string().default(""),
-  difficulty: z.string().nullable().optional(),
-  support: z.string().nullable().optional(),
-  files: z.array(demoFileSchema),
-});
-
 
 type SessionPayload = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
 type DemoFileInput = z.infer<typeof demoFileSchema>;
@@ -546,81 +536,16 @@ adminRoutes.put("/demos/:id/files", async (c) => {
 adminRoutes.post("/demos/:id/publish", async (c) => {
   const demoId = c.req.param("id");
   const body = await c.req.json().catch(() => null);
-  const parsed = publishDemoSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: parsed.error.flatten() }, 400);
-  }
-
-  const [existing] = await db.select().from(demos).where(eq(demos.id, demoId)).limit(1);
-  if (!existing) {
-    return c.json({ error: "Demo not found" }, 404);
-  }
-
-  const [targetCategory] = await db
-    .select()
-    .from(demoCategories)
-    .where(eq(demoCategories.id, parsed.data.categoryId))
-    .limit(1);
-  if (!targetCategory) {
-    return c.json({ error: "Category not found" }, 404);
-  }
-
-  const dedupedFiles = dedupeFiles(parsed.data.files);
-
-  await db.transaction(async (tx) => {
-    let nextSortOrder = existing.sortOrder;
-
-    if (existing.categoryId !== targetCategory.id) {
-      const [sortRow] = await tx
-        .select({ maxSort: max(demos.sortOrder) })
-        .from(demos)
-        .where(eq(demos.categoryId, targetCategory.id));
-      nextSortOrder = (sortRow?.maxSort ?? -1) + 1;
-    }
-
-    await tx
-      .update(demos)
-      .set({
-        categoryId: targetCategory.id,
-        source: targetCategory.type,
-        title: parsed.data.title,
-        slug: parsed.data.slug ? toSlug(parsed.data.slug) : toSlug(parsed.data.title),
-        description: parsed.data.description,
-        difficulty: parsed.data.difficulty ?? null,
-        support: parsed.data.support ?? null,
-        status: "published",
-        sortOrder: nextSortOrder,
-        updatedAt: new Date(),
-        publishedAt: new Date(),
-      })
-      .where(eq(demos.id, demoId));
-
-    await tx.delete(demoFiles).where(eq(demoFiles.demoId, demoId));
-
-    if (dedupedFiles.length > 0) {
-      await tx.insert(demoFiles).values(
-        dedupedFiles.map((file, sortOrder) => ({
-          id: createId("file"),
-          demoId,
-          fileKind: file.fileKind,
-          content: file.content,
-          sortOrder,
-        })),
+  try {
+    const result = await publishDemo(demoId, body);
+    return c.json(result);
+  } catch (err) {
+    if (err && typeof err === "object" && "status" in err && "error" in err) {
+      return c.json(
+        { error: (err as { error: unknown }).error },
+        (err as { status: number }).status,
       );
     }
-  });
-
-  const [publishedDemo] = await db.select().from(demos).where(eq(demos.id, demoId)).limit(1);
-  const publishedFiles = await db
-    .select()
-    .from(demoFiles)
-    .where(eq(demoFiles.demoId, demoId))
-    .orderBy(asc(demoFiles.sortOrder));
-
-  return c.json({
-    demo: {
-      ...publishedDemo,
-      files: publishedFiles,
-    },
-  });
+    throw err;
+  }
 });
