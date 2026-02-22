@@ -4,6 +4,7 @@
 import { asc, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db/client.js";
+import { withDbTransaction } from "./db/transaction.js";
 import { demoCategories, demoFiles, demos } from "./db/schema.js";
 import { createId, toSlug } from "./utils.js";
 
@@ -90,7 +91,7 @@ export async function publishDemo(
 
   const dedupedFiles = dedupeFiles(parsed.data.files);
 
-  await db.transaction(async (tx) => {
+  await withDbTransaction(async (tx) => {
     let nextSortOrder = existing.sortOrder;
 
     if (existing.categoryId !== targetCategory.id) {

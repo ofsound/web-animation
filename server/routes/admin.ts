@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, max } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "../auth.js";
 import { db } from "../db/client.js";
+import { withDbTransaction } from "../db/transaction.js";
 import { demoCategories, demoFiles, demos } from "../db/schema.js";
 import { isAdminEmail } from "../env.js";
 import { publishDemo } from "../publishDemo.js";
@@ -271,7 +272,7 @@ adminRoutes.post("/categories/reorder", async (c) => {
     return c.json({ error: "All categories in reorder must have same type" }, 400);
   }
 
-  await db.transaction(async (tx) => {
+  await withDbTransaction(async (tx) => {
     for (const [sortOrder, id] of orderedIds.entries()) {
       await tx
         .update(demoCategories)
@@ -474,7 +475,7 @@ adminRoutes.post("/demos/reorder", async (c) => {
     return c.json({ error: "All demos must belong to the same category" }, 400);
   }
 
-  await db.transaction(async (tx) => {
+  await withDbTransaction(async (tx) => {
     for (const [sortOrder, id] of orderedIds.entries()) {
       await tx
         .update(demos)
@@ -506,7 +507,7 @@ adminRoutes.put("/demos/:id/files", async (c) => {
 
   const deduped = dedupeFiles(parsed.data.files);
 
-  await db.transaction(async (tx) => {
+  await withDbTransaction(async (tx) => {
     await tx.delete(demoFiles).where(eq(demoFiles.demoId, demoId));
 
     if (deduped.length === 0) {
