@@ -20,7 +20,7 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
   },
   rateLimit: {
-    enabled: false,
+    enabled: true,
   },
   databaseHooks: {
     user: {

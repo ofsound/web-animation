@@ -1,8 +1,4 @@
-import { useMemo } from "react";
-import { css } from "@codemirror/lang-css";
-import { html } from "@codemirror/lang-html";
-import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
-import CodeMirror from "@uiw/react-codemirror";
+import { Suspense, lazy } from "react";
 import type { DemoSource } from "../types/demo";
 
 interface LiveCodeEditorProps {
@@ -15,6 +11,12 @@ interface LiveCodeEditorProps {
   isMaximized: boolean;
 }
 
+const MaximizedCodeEditor = lazy(() =>
+  import("./MaximizedCodeEditor").then((module) => ({
+    default: module.MaximizedCodeEditor,
+  })),
+);
+
 export function LiveCodeEditor({
   id,
   title,
@@ -24,20 +26,6 @@ export function LiveCodeEditor({
   themeMode,
   isMaximized,
 }: LiveCodeEditorProps) {
-  const maximizedEditorLineCount = useMemo(() => {
-    const lineCount = value.split(/\r\n|\r|\n/).length;
-    return Math.max(32, lineCount + 2);
-  }, [value]);
-  const maximizedEditorHeightPx = maximizedEditorLineCount * 22;
-  const editorExtensions = useMemo(
-    () =>
-      source === "css"
-        ? [css()]
-        : [html({ autoCloseTags: true, matchClosingTags: true })],
-    [source],
-  );
-  const editorTheme = themeMode === "dark" ? githubDark : githubLight;
-
   return (
     <div
       id={`${id}-code-panel`}
@@ -60,24 +48,28 @@ export function LiveCodeEditor({
         }`}
       >
         {isMaximized ? (
-          <CodeMirror
-            id={`${id}-code-editor`}
-            value={value}
-            onChange={onChange}
-            extensions={editorExtensions}
-            theme={editorTheme}
-            basicSetup={{
-              foldGutter: false,
-              lineNumbers: true,
-              highlightActiveLineGutter: false,
-              highlightActiveLine: false,
-            }}
-            height={`${maximizedEditorHeightPx}px`}
-            maxHeight={`${maximizedEditorHeightPx}px`}
-            className="code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none"
-            aria-labelledby={`${id}-code-editor-label`}
-            aria-describedby={`${id}-code-hint`}
-          />
+          <Suspense
+            fallback={
+              <textarea
+                id={`${id}-code-editor`}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                className="code-block text-text-tertiary min-h-[16rem] w-full resize-y overflow-auto bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none"
+                aria-labelledby={`${id}-code-editor-label`}
+                aria-describedby={`${id}-code-hint`}
+                spellCheck={false}
+              />
+            }
+          >
+            <MaximizedCodeEditor
+              id={id}
+              title={title}
+              value={value}
+              onChange={onChange}
+              source={source}
+              themeMode={themeMode}
+            />
+          </Suspense>
         ) : (
           <textarea
             id={`${id}-code-editor`}

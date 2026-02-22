@@ -5,16 +5,21 @@ import tailwindcss from "@tailwindcss/vite";
 import { inspectorServer } from "@react-dev-inspector/vite-plugin";
 
 export default defineConfig(({ mode }) => {
+  const isDev = mode === "development";
   const env = loadEnv(mode, process.cwd(), "");
   Object.assign(process.env, env);
 
   return {
     plugins: [
-      inspectorServer(),
+      ...(isDev ? [inspectorServer()] : []),
       react({
-        babel: {
-          plugins: ["@react-dev-inspector/babel-plugin"],
-        },
+        ...(isDev
+          ? {
+              babel: {
+                plugins: ["@react-dev-inspector/babel-plugin"],
+              },
+            }
+          : {}),
       }),
       tailwindcss(),
     ],

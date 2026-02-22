@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useTheme } from "../hooks/useTheme";
+import { collectFrameThemeCss } from "../lib/frameThemeStyles";
 import type { DemoDraft } from "./types";
 
 const NETWORK_GUARD = `
@@ -31,24 +33,11 @@ function escapeScript(input: string): string {
   return input.replace(/<\/script/gi, "<\\/script");
 }
 
-function collectParentStylesheetText(): string {
-  if (typeof document === "undefined") return "";
-
-  let cssText = "";
-  for (const stylesheet of Array.from(document.styleSheets)) {
-    try {
-      for (const rule of Array.from(stylesheet.cssRules)) {
-        cssText += `${rule.cssText}\n`;
-      }
-    } catch {
-      // Ignore cross-origin and inaccessible sheets.
-    }
-  }
-
-  return cssText;
-}
-
-function buildPreviewDoc(draft: DemoDraft, appStyles: string): string {
+function buildPreviewDoc(
+  draft: DemoDraft,
+  themeClass: "light" | "dark",
+  themeCss: string,
+): string {
   const html = draft.files.html || "<div>No HTML provided.</div>";
   const css = `${draft.files.tailwind_css}\n${draft.files.css}`;
   const js = draft.files.js;
@@ -57,12 +46,12 @@ function buildPreviewDoc(draft: DemoDraft, appStyles: string): string {
   const escapedGuard = escapeScript(NETWORK_GUARD);
 
   return `<!doctype html>
-<html lang="en">
+<html lang="en" class="${themeClass}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob: https: http:; font-src data: https: http:; connect-src 'none'; media-src data: blob:; child-src 'none'; frame-src 'none';" />
-  <style>${appStyles}</style>
+  <style>${themeCss}</style>
   <style>
     html, body {
       margin: 0;
@@ -107,12 +96,13 @@ interface DemoPreviewFrameProps {
 }
 
 export function DemoPreviewFrame({ draft }: DemoPreviewFrameProps) {
-  const appStylesheetText = useMemo(() => collectParentStylesheetText(), []);
+  const { theme } = useTheme();
+  const themeCss = useMemo(() => collectFrameThemeCss(theme), [theme]);
 
   const srcDoc = useMemo(() => {
     if (!draft) return "";
-    return buildPreviewDoc(draft, appStylesheetText);
-  }, [appStylesheetText, draft]);
+    return buildPreviewDoc(draft, theme, themeCss);
+  }, [draft, theme, themeCss]);
 
   if (!draft) {
     return (
@@ -128,7 +118,7 @@ export function DemoPreviewFrame({ draft }: DemoPreviewFrameProps) {
       srcDoc={srcDoc}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
-      className="h-[360px] w-full rounded-xl border border-border-subtle bg-white"
+      className="bg-demo-preview-bg h-[360px] w-full rounded-xl border border-border-subtle"
     />
   );
 }

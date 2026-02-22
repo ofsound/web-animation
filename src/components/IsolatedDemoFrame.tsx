@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useTheme } from "../hooks/useTheme";
+import { collectFrameThemeCss } from "../lib/frameThemeStyles";
 
 export type IsolatedDemoFiles = {
   html: string;
@@ -35,47 +37,15 @@ const NETWORK_GUARD = `
 })();
 `;
 
-let cachedStylesheetText: string | null = null;
-
 function escapeScript(input: string): string {
   return input.replace(/<\/script/gi, "<\\/script");
 }
 
-function collectHostStylesheetText(): string {
-  if (cachedStylesheetText !== null) {
-    return cachedStylesheetText;
-  }
-
-  if (typeof document === "undefined") {
-    cachedStylesheetText = "";
-    return cachedStylesheetText;
-  }
-
-  let cssText = "";
-  for (const stylesheet of Array.from(document.styleSheets)) {
-    try {
-      for (const rule of Array.from(stylesheet.cssRules)) {
-        cssText += `${rule.cssText}\n`;
-      }
-    } catch {
-      // Ignore inaccessible stylesheets.
-    }
-  }
-
-  cachedStylesheetText = cssText;
-  return cssText;
-}
-
-function getThemeClass(): string {
-  if (typeof document === "undefined") return "";
-  if (document.documentElement.classList.contains("dark")) return "dark";
-  if (document.documentElement.classList.contains("light")) return "light";
-  return "";
-}
-
-function buildFrameDoc(files: IsolatedDemoFiles): string {
-  const appStyles = collectHostStylesheetText();
-  const themeClass = getThemeClass();
+function buildFrameDoc(
+  files: IsolatedDemoFiles,
+  themeClass: "light" | "dark",
+  themeCss: string,
+): string {
 
   const escapedGuard = escapeScript(NETWORK_GUARD);
   const escapedJs = escapeScript(files.js);
@@ -88,7 +58,7 @@ function buildFrameDoc(files: IsolatedDemoFiles): string {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob: https: http:; font-src data: https: http:; connect-src 'none'; media-src data: blob:; frame-src 'none'; child-src 'none'; form-action 'none';" />
-  <style>${appStyles}</style>
+  <style>${themeCss}</style>
   <style>
     html, body {
       margin: 0;
@@ -133,7 +103,12 @@ interface IsolatedDemoFrameProps {
 }
 
 export function IsolatedDemoFrame({ files }: IsolatedDemoFrameProps) {
-  const srcDoc = useMemo(() => buildFrameDoc(files), [files]);
+  const { theme } = useTheme();
+  const themeCss = useMemo(() => collectFrameThemeCss(theme), [theme]);
+  const srcDoc = useMemo(
+    () => buildFrameDoc(files, theme, themeCss),
+    [files, theme, themeCss],
+  );
 
   return (
     <iframe
@@ -141,7 +116,7 @@ export function IsolatedDemoFrame({ files }: IsolatedDemoFrameProps) {
       srcDoc={srcDoc}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
-      className="h-full w-full rounded-xl border-0 bg-white"
+      className="bg-demo-preview-bg h-full w-full rounded-xl border-0"
     />
   );
 }
