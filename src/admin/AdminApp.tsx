@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { authClient } from "../lib/auth-client";
 import { DemoPreviewFrame } from "./DemoPreviewFrame";
 import {
   clearDraftFromStorage,
@@ -154,56 +153,42 @@ function toErrorMessage(error: unknown): string {
   return "Unexpected error";
 }
 
-async function signInWithFallback(email: string, password: string): Promise<void> {
-  const endpoints = ["/api/auth/sign-in/email", "/api/auth/email"];
-  const payload = JSON.stringify({ email, password });
-  let lastError = "Unable to sign in";
+async function signIn(email: string, password: string): Promise<void> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
-  for (const endpoint of endpoints) {
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+  try {
+    const response = await fetch("/api/admin/sign-in", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+      signal: controller.signal,
+    });
 
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: payload,
-        signal: controller.signal,
-      });
-
-      if (response.status === 404) {
-        continue;
+    if (!response.ok) {
+      let message = `Sign-in failed (${response.status})`;
+      try {
+        const json = (await response.json()) as { message?: string; error?: string };
+        message =
+          (typeof json.message === "string" && json.message) ||
+          (typeof json.error === "string" && json.error) ||
+          message;
+      } catch {
+        // Keep default status message when body is unavailable.
       }
-
-      if (!response.ok) {
-        try {
-          const json = (await response.json()) as { message?: string; error?: string };
-          lastError =
-            (typeof json.message === "string" && json.message) ||
-            (typeof json.error === "string" && json.error) ||
-            `Sign-in failed (${response.status})`;
-        } catch {
-          lastError = `Sign-in failed (${response.status})`;
-        }
-        throw new Error(lastError);
-      }
-
-      return;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        lastError = "Sign-in timed out. Please try again.";
-      } else if (error instanceof Error) {
-        lastError = error.message || lastError;
-      }
-    } finally {
-      window.clearTimeout(timeoutId);
+      throw new Error(message);
     }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Sign-in timed out. Please try again.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-
-  throw new Error(lastError);
 }
 
 function createDefaultFiles() {
@@ -456,7 +441,7 @@ export default function AdminApp() {
     event.preventDefault();
 
     await runAction("signin", async () => {
-      await signInWithFallback(signInEmail, signInPassword);
+      await signIn(signInEmail, signInPassword);
 
       const session = await apiRequest<SessionResponse>("/api/admin/session");
       setUser(session.user);
@@ -468,10 +453,9 @@ export default function AdminApp() {
 
   const handleSignOut = async () => {
     await runAction("signout", async () => {
-      const result = await authClient.signOut();
-      if (result.error) {
-        throw new Error(result.error.message ?? "Unable to sign out");
-      }
+      await apiRequest<{ success?: boolean; error?: string }>("/api/admin/sign-out", {
+        method: "POST",
+      });
 
       setUser(null);
       setCategories([]);

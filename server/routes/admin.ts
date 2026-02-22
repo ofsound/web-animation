@@ -105,6 +105,31 @@ function dedupeFiles(files: DemoFileInput[]): DemoFileInput[] {
 
 export const adminRoutes = new Hono<AdminBindings>();
 
+adminRoutes.post("/sign-in", async (c) => {
+  const url = new URL(c.req.url);
+  const body =
+    c.req.raw.method === "GET" || c.req.raw.method === "HEAD"
+      ? undefined
+      : await c.req.raw.arrayBuffer();
+  const request = new Request(new URL("/api/auth/sign-in/email", url.origin), {
+    method: "POST",
+    headers: c.req.raw.headers,
+    body: body ? body.slice(0) : undefined,
+  });
+
+  return auth.handler(request);
+});
+
+adminRoutes.post("/sign-out", async (c) => {
+  const url = new URL(c.req.url);
+  const request = new Request(new URL("/api/auth/sign-out", url.origin), {
+    method: c.req.raw.method,
+    headers: c.req.raw.headers,
+  });
+
+  return auth.handler(request);
+});
+
 adminRoutes.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) {

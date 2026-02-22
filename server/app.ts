@@ -34,12 +34,9 @@ app.get("/api/health", (c) => c.json({ status: "ok" }));
 const authHandler = async (c: Context) => {
   return auth.handler(c.req.raw);
 };
-app.all("/auth/*", authHandler);
 app.all("/api/auth/*", authHandler);
 
-app.route("/admin", adminRoutes);
 app.route("/api/admin", adminRoutes);
-app.route("/public", publicRoutes);
 app.route("/api/public", publicRoutes);
 
 app.notFound((c) => {
