@@ -68,7 +68,10 @@ server/
     ├── check-env.ts
     └── ensure-admin.ts
 api/
-└── [...route].ts               # Vercel serverless entry (Node runtime)
+├── [...route].ts               # Catch-all API entry (auth/admin)
+├── health.ts                   # Explicit health endpoint
+└── public/
+    └── gallery.ts              # Explicit public gallery endpoint
 ```
 
 ## Environment
