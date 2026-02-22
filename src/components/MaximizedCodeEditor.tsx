@@ -6,7 +6,6 @@ import CodeMirror from "@uiw/react-codemirror";
 import {
   toLiveDatabaseCode,
   toLiveDatabaseFiles,
-  type LiveDatabaseFiles,
 } from "../lib/liveEditorUtils";
 import type { DemoSource } from "../types/demo";
 import { MaximizedSingleCodeEditor } from "./MaximizedSingleCodeEditor";
@@ -21,20 +20,18 @@ interface MaximizedCodeEditorProps {
   themeMode: "light" | "dark";
 }
 
-type DatabasePanelKind = keyof LiveDatabaseFiles;
+type DatabasePanelKind = "html" | "css" | "js";
 
 const DATABASE_PANEL_ORDER: DatabasePanelKind[] = [
   "html",
   "css",
   "js",
-  "tailwindCss",
 ];
 
 const DATABASE_PANEL_LABEL: Record<DatabasePanelKind, string> = {
   html: "HTML",
   css: "CSS",
   js: "JavaScript",
-  tailwindCss: "Tailwind CSS",
 };
 
 const CODEMIRROR_SETUP = {
@@ -52,7 +49,7 @@ const EDITOR_CLASS_DATABASE =
 const DATABASE_EDITOR_VIEWPORT_PX = 340;
 
 function toDatabaseColumns(maximizedPanel: DatabasePanelKind | null): string {
-  if (!maximizedPanel) return "repeat(4, minmax(220px, 1fr))";
+  if (!maximizedPanel) return "repeat(3, minmax(220px, 1fr))";
 
   return DATABASE_PANEL_ORDER.map((panel) =>
     panel === maximizedPanel ? "minmax(420px, 1fr)" : "56px",
@@ -64,7 +61,7 @@ function toPanelExtensions(panel: DatabasePanelKind) {
     return [html({ autoCloseTags: true, matchClosingTags: true })];
   }
 
-  if (panel === "css" || panel === "tailwindCss") {
+  if (panel === "css") {
     return [css()];
   }
 
@@ -89,7 +86,6 @@ export function MaximizedCodeEditor({
     html: "idle",
     css: "idle",
     js: "idle",
-    tailwindCss: "idle",
   });
   const databaseFiles = useMemo(
     () => (source === "database" ? toLiveDatabaseFiles(value) : null),
@@ -164,7 +160,7 @@ export function MaximizedCodeEditor({
 
         <div className="overflow-x-auto pb-1">
           <div
-            className="grid min-w-[980px] gap-2.5"
+            className="grid min-w-[740px] gap-2.5"
             style={{ gridTemplateColumns: databaseColumns }}
           >
             {DATABASE_PANEL_ORDER.map((panel) => {
