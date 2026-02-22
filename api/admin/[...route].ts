@@ -1,5 +1,5 @@
+import { getRequestListener } from "@hono/node-server";
 import { Hono } from "hono";
-import { handle } from "hono/vercel";
 import { adminRoutes } from "../../server/routes/admin.js";
 
 const app = new Hono();
@@ -10,4 +10,8 @@ app.route("/admin", adminRoutes);
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export default handle(app);
+const listener = getRequestListener(app.fetch);
+
+export default function handler(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {
+  return listener(req, res);
+}
