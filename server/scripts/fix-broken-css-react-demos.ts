@@ -651,7 +651,8 @@ async function upsertDemoFile(
 
 async function loadCssDemoBundles(): Promise<DemoBundle[]> {
   const mode = parseModeArg();
-  const typeFilter = mode === "all" ? ["css", "tailwind"] : [mode];
+  const typeFilter: Array<"css" | "tailwind"> =
+    mode === "all" ? ["css", "tailwind"] : [mode];
 
   const demoRows = await db
     .select({

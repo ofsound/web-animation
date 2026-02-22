@@ -8,6 +8,7 @@
     "dev:api": "tsx watch server/dev.ts",
     "build": "tsc -b && vite build",
     "build:vercel": "vite build",
+    "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
     "knip": "knip",

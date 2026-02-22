@@ -36,6 +36,7 @@ npm install
 npm run dev      # Start frontend dev server
 npm run dev:api  # Start Hono API server on :8787
 npm run build    # Production build
+npm run typecheck:server
 npm run lint     # ESLint
 npm run test     # Vitest
 npm run env:check
@@ -71,13 +72,7 @@ api/
 ├── auth/
 │   └── [...route].ts           # Better Auth endpoints
 ├── admin/
-│   ├── [...route].ts           # Admin catch-all primary handler
-│   ├── sign-in.ts              # Explicit sign-in handler
-│   ├── demos.ts                # Explicit demos list/create handler
-│   └── demos/
-│       ├── [id].ts             # Explicit demo patch/delete handler
-│       └── [id]/
-│           └── publish.ts      # Explicit demo publish handler
+│   └── [...route].ts           # Node.js dispatcher for all /api/admin/* routes
 ├── health.ts                   # Explicit health endpoint
 └── public/
     └── gallery.ts              # Explicit public gallery endpoint
@@ -85,10 +80,16 @@ api/
 
 ### API Routing Strategy
 
-- Vercel uses `api/admin/[...route].ts` as the main admin handler.
-- A small set of explicit admin handlers override known-problem routes (`sign-in`, `demos`, `demos/:id`, `demos/:id/publish`).
-- This keeps deployments under Vercel Hobby Serverless Function count limits.
-- Local development still routes through the shared Hono app in `/Users/ben/Dev/REACT/web-animation/server/app.ts`.
+- Vercel uses one Node.js function entrypoint: `api/admin/[...route].ts`.
+- The catch-all implements explicit method+path dispatch in `/Users/ben/Dev/REACT/web-animation/server/vercel/adminDispatcher.ts`.
+- Local development still routes through the shared Hono app in `/Users/ben/Dev/REACT/web-animation/server/app.ts`, with shared admin services in `/Users/ben/Dev/REACT/web-animation/server/services/admin.ts`.
+
+### Runtime And Transactions
+
+- Production API handlers are intentionally pinned to Vercel `runtime = "nodejs"` (not Edge runtime).
+- Database access uses Drizzle `neon-http` with `@neondatabase/serverless`.
+- `neon-http` does not provide true database transactions in this setup; `withDbTransaction` is best-effort and falls back to non-transactional execution.
+- Publish/files flows include compensating recovery logic so failed multi-step writes restore prior file state instead of silently persisting partial updates.
 
 ## Environment
 
