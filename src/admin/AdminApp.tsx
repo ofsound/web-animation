@@ -1076,6 +1076,7 @@ export default function AdminApp() {
             </p>
           ) : (
             <>
+              <DemoPreviewFrame draft={demoDraft} />
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
                   <span className="text-text-secondary">Title</span>
@@ -1201,7 +1202,6 @@ export default function AdminApp() {
                 </span>
               </div>
 
-              <DemoPreviewFrame draft={demoDraft} />
               <p className="text-text-tertiary text-xs">
                 Preview runs in an isolated iframe (`allow-scripts` only) with CSP
                 `connect-src 'none'` and runtime network API blocking.
