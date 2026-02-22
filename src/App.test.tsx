@@ -3,7 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import App from "./App";
 import { ThemeProvider } from "./components/ThemeProvider";
-import { getDemoRoutePath } from "./data/demoRegistry";
+import { toDemoRouteSlug } from "./data/demoRegistry";
+import { fetchPublicGallery } from "./data/publicGallery";
+
+vi.mock("./data/publicGallery", async () => {
+  const actual =
+    await vi.importActual<typeof import("./data/publicGallery")>(
+      "./data/publicGallery",
+    );
+
+  return {
+    ...actual,
+    fetchPublicGallery: vi.fn(),
+  };
+});
 
 vi.mock("@uiw/react-codemirror", () => ({
   __esModule: true,
@@ -49,6 +62,16 @@ function renderApp(initialPath = "/tailwind") {
   );
 }
 
+function demoPath(mode: "tailwind" | "css", title: string, demoId: string): string {
+  return `/${mode}/${toDemoRouteSlug(title, demoId)}`;
+}
+
+async function waitForGalleryLoad() {
+  await waitFor(() =>
+    expect(screen.queryByText("Loading gallery…")).not.toBeInTheDocument(),
+  );
+}
+
 class IntersectionObserverMock {
   private readonly callback: IntersectionObserverCallback;
 
@@ -86,6 +109,105 @@ class IntersectionObserverMock {
 }
 
 let scrollToMock: ReturnType<typeof vi.fn>;
+const fetchPublicGalleryMock = vi.mocked(fetchPublicGallery);
+
+const PUBLIC_GALLERY_FIXTURE = {
+  categories: [
+    {
+      id: "cat-hover",
+      type: "tailwind" as const,
+      slug: "hover",
+      label: "Hover & Interaction",
+      icon: "pointer",
+      description: "Hover demos",
+      sortOrder: 0,
+    },
+    {
+      id: "cat-complex",
+      type: "tailwind" as const,
+      slug: "complex",
+      label: "Complex Keyframes",
+      icon: "layers",
+      description: "Complex demos",
+      sortOrder: 1,
+    },
+    {
+      id: "cat-keyframes",
+      type: "css" as const,
+      slug: "keyframes",
+      label: "Core Keyframe Animations",
+      icon: "spark",
+      description: "CSS keyframe demos",
+      sortOrder: 0,
+    },
+  ],
+  demos: [
+    {
+      id: "hover-scale-glow",
+      source: "tailwind" as const,
+      categoryId: "cat-hover",
+      slug: "scale-and-glow",
+      title: "Scale & Glow",
+      description: "Scale and glow on hover.",
+      status: "published" as const,
+      difficulty: "Intermediate",
+      support: null,
+      sortOrder: 0,
+      files: [
+        { demoId: "hover-scale-glow", fileKind: "html" as const, content: "<button>Hover</button>", sortOrder: 0 },
+        { demoId: "hover-scale-glow", fileKind: "tailwind_css" as const, content: ".demo{}", sortOrder: 1 },
+      ],
+    },
+    {
+      id: "hover-gradient-border",
+      source: "tailwind" as const,
+      categoryId: "cat-hover",
+      slug: "gradient-border-spin",
+      title: "Gradient Border Spin",
+      description: "Animated gradient border.",
+      status: "published" as const,
+      difficulty: "Intermediate",
+      support: null,
+      sortOrder: 1,
+      files: [
+        { demoId: "hover-gradient-border", fileKind: "html" as const, content: "<button>Gradient</button>", sortOrder: 0 },
+        { demoId: "hover-gradient-border", fileKind: "tailwind_css" as const, content: ".demo{}", sortOrder: 1 },
+      ],
+    },
+    {
+      id: "complex-heartbeat",
+      source: "tailwind" as const,
+      categoryId: "cat-complex",
+      slug: "heartbeat",
+      title: "Heartbeat",
+      description: "Pulse keyframe.",
+      status: "published" as const,
+      difficulty: "Advanced",
+      support: null,
+      sortOrder: 0,
+      files: [
+        { demoId: "complex-heartbeat", fileKind: "html" as const, content: "<div>Beat</div>", sortOrder: 0 },
+        { demoId: "complex-heartbeat", fileKind: "tailwind_css" as const, content: ".demo{}", sortOrder: 1 },
+      ],
+    },
+    {
+      id: "keyframes-basic-bounce",
+      source: "css" as const,
+      categoryId: "cat-keyframes",
+      slug: "basic-keyframes-bounce",
+      title: "Basic @keyframes Bounce",
+      description: "Basic CSS bounce.",
+      status: "published" as const,
+      difficulty: null,
+      support: "widely-available",
+      sortOrder: 0,
+      files: [
+        { demoId: "keyframes-basic-bounce", fileKind: "html" as const, content: "<div class='dot'></div>", sortOrder: 0 },
+        { demoId: "keyframes-basic-bounce", fileKind: "css" as const, content: ".dot{width:20px;height:20px;background:red;}", sortOrder: 1 },
+      ],
+    },
+  ],
+};
 
 function getPathname() {
   return screen.getByTestId("location-path").textContent;
@@ -120,6 +242,11 @@ describe("App routing", () => {
     });
 
     vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
+    Object.defineProperty(window, "IntersectionObserver", {
+      configurable: true,
+      writable: true,
+      value: IntersectionObserverMock,
+    });
     vi.stubGlobal(
       "matchMedia",
       vi.fn().mockReturnValue({
@@ -133,15 +260,22 @@ describe("App routing", () => {
         dispatchEvent: vi.fn(),
       }),
     );
+    fetchPublicGalleryMock.mockResolvedValue(PUBLIC_GALLERY_FIXTURE);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
   it("opens a routed CSS demo in maximized mode", async () => {
-    const path = getDemoRoutePath("css", "keyframes-basic-bounce");
+    const path = demoPath(
+      "css",
+      "Basic @keyframes Bounce",
+      "keyframes-basic-bounce",
+    );
     renderApp(path);
+    await waitForGalleryLoad();
 
     await waitFor(() =>
       expect(screen.getByRole("radio", { name: /CSS/i })).toHaveAttribute(
@@ -159,7 +293,10 @@ describe("App routing", () => {
   });
 
   it("closes a routed maximized demo back to mode root", async () => {
-    renderApp(getDemoRoutePath("css", "keyframes-basic-bounce"));
+    renderApp(
+      demoPath("css", "Basic @keyframes Bounce", "keyframes-basic-bounce"),
+    );
+    await waitForGalleryLoad();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -176,7 +313,8 @@ describe("App routing", () => {
   });
 
   it("updates URL slug when navigating next/prev in maximized mode", async () => {
-    renderApp(getDemoRoutePath("tailwind", "hover-scale-glow"));
+    renderApp(demoPath("tailwind", "Scale & Glow", "hover-scale-glow"));
+    await waitForGalleryLoad();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -192,7 +330,7 @@ describe("App routing", () => {
       ).toBeInTheDocument(),
     );
     expect(getPathname()).toBe(
-      getDemoRoutePath("tailwind", "hover-gradient-border"),
+      demoPath("tailwind", "Gradient Border Spin", "hover-gradient-border"),
     );
 
     fireEvent.click(
@@ -208,11 +346,14 @@ describe("App routing", () => {
         }),
       ).toBeInTheDocument(),
     );
-    expect(getPathname()).toBe(getDemoRoutePath("tailwind", "hover-scale-glow"));
+    expect(getPathname()).toBe(
+      demoPath("tailwind", "Scale & Glow", "hover-scale-glow"),
+    );
   });
 
   it("crosses from tailwind to css when advancing past last tailwind demo", async () => {
-    renderApp(getDemoRoutePath("tailwind", "complex-heartbeat"));
+    renderApp(demoPath("tailwind", "Heartbeat", "complex-heartbeat"));
+    await waitForGalleryLoad();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -226,11 +367,16 @@ describe("App routing", () => {
         "true",
       ),
     );
-    expect(getPathname()).toBe(getDemoRoutePath("css", "keyframes-basic-bounce"));
+    expect(getPathname()).toBe(
+      demoPath("css", "Basic @keyframes Bounce", "keyframes-basic-bounce"),
+    );
   });
 
   it("switches mode to root route and resets scroll to top", async () => {
-    renderApp(getDemoRoutePath("css", "keyframes-basic-bounce"));
+    renderApp(
+      demoPath("css", "Basic @keyframes Bounce", "keyframes-basic-bounce"),
+    );
+    await waitForGalleryLoad();
 
     Object.defineProperty(window, "scrollY", {
       configurable: true,
@@ -263,7 +409,9 @@ describe("App routing", () => {
     renderApp("/tailwind");
 
     await waitFor(() =>
-      expect(getPathname()).toBe(getDemoRoutePath("tailwind", "hover-scale-glow")),
+      expect(getPathname()).toBe(
+        demoPath("tailwind", "Scale & Glow", "hover-scale-glow"),
+      ),
     );
   });
 });

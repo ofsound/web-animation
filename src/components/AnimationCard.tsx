@@ -7,11 +7,20 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { css } from "@codemirror/lang-css";
-import { html } from "@codemirror/lang-html";
-import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
-import CodeMirror from "@uiw/react-codemirror";
 import type { DemoSource } from "../types/demo";
+import { toLiveTailwindMarkup, toScopedLiveCss } from "../lib/liveEditorUtils";
+import {
+  IconCheck,
+  IconCopy,
+  IconMaximize,
+  IconMinimize,
+  IconReplay,
+  IconReset,
+  IconX,
+  ACTION_BTN_BASE,
+  ACTION_BTN_HOVER,
+} from "./AnimationCardIcons";
+import { LiveCodeEditor } from "./LiveCodeEditor";
 
 type CopyResult = "success" | "error";
 
@@ -38,171 +47,6 @@ interface AnimationCardProps {
   queuePosition?: number;
   queueTotal?: number;
 }
-
-const VOID_TAGS = new Set([
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "link",
-  "meta",
-  "param",
-  "source",
-  "track",
-  "wbr",
-]);
-
-const CSS_RULE_LINE_PATTERN =
-  /^\s*(?:@|\.|#|:|::|\*|[a-z][\w-]*(?:\[[^\]]+\])?)[^{()]*\{/i;
-
-function toLiveTailwindMarkup(input: string): string | null {
-  if (typeof window === "undefined") return null;
-
-  let jsxLikeMarkup = input.trim();
-  if (!jsxLikeMarkup) return null;
-
-  jsxLikeMarkup = jsxLikeMarkup
-    .replace(/\bclassName=/g, "class=")
-    .replace(/\bhtmlFor=/g, "for=")
-    .replace(/\{\s*"([^"]*)"\s*\}/g, "$1")
-    .replace(/\{\s*'([^']*)'\s*\}/g, "$1")
-    .replace(/<>\s*/g, "<div>")
-    .replace(/\s*<\/>\s*/g, "</div>")
-    .replace(/<([a-z][\w-]*)([^>]*)\/>/gi, (match, tag, attrs) => {
-      return VOID_TAGS.has(String(tag).toLowerCase())
-        ? match
-        : `<${tag}${attrs}></${tag}>`;
-    });
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(
-    `<div data-live-tailwind-root>${jsxLikeMarkup}</div>`,
-    "text/html",
-  );
-  const root = doc.body.firstElementChild;
-  if (!root) return null;
-
-  root.querySelectorAll("script").forEach((element) => element.remove());
-  root.querySelectorAll("*").forEach((element) => {
-    for (const attribute of Array.from(element.attributes)) {
-      if (attribute.name.startsWith("on")) {
-        element.removeAttribute(attribute.name);
-      }
-    }
-  });
-
-  return root.innerHTML || null;
-}
-
-function extractCssCandidate(input: string): string {
-  const lines = input.split("\n");
-  const firstRuleLine = lines.findIndex((line) =>
-    CSS_RULE_LINE_PATTERN.test(line),
-  );
-  if (firstRuleLine === -1) return "";
-  return lines.slice(firstRuleLine).join("\n");
-}
-
-function toScopedLiveCss(input: string, demoId: string): string {
-  const cssCandidate = extractCssCandidate(input);
-  if (!cssCandidate) return "";
-
-  const withoutJsComments = cssCandidate.replace(/^\s*\/\/.*$/gm, "");
-  const classSelectorPortable = withoutJsComments.replace(
-    /(?<![\w-])\.([A-Za-z_-][\w-]*)/g,
-    `[class*="$1"]`,
-  );
-  const scopedSelector = `[data-live-demo-root="${demoId}"]`;
-
-  return `@scope (${scopedSelector}) {\n${classSelectorPortable}\n}`;
-}
-
-/* ── shared SVG props matching CategoryIcon stroke style ── */
-const ACTION_ICON_PROPS = {
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.8,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true as const,
-};
-
-function IconMaximize({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <polyline points="15 3 21 3 21 9" />
-      <path d="M21 3l-7 7" />
-      <polyline points="9 21 3 21 3 15" />
-      <path d="M3 21l7-7" />
-    </svg>
-  );
-}
-
-function IconMinimize({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <polyline points="4 14 10 14 10 20" />
-      <path d="M3 21l7-7" />
-      <polyline points="20 10 14 10 14 4" />
-      <path d="M21 3l-7 7" />
-    </svg>
-  );
-}
-
-function IconReplay({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <path d="M21 12a9 9 0 1 1-2.2-5.9" />
-      <polyline points="21 3 21 9 15 9" />
-    </svg>
-  );
-}
-
-function IconReset({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <path d="M18 6L6 18" />
-      <path d="M6 6l12 12" />
-    </svg>
-  );
-}
-
-function IconCopy({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
-function IconCheck({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  );
-}
-
-function IconX({ className }: { className?: string }) {
-  return (
-    <svg className={className} {...ACTION_ICON_PROPS}>
-      <path d="M18 6L6 18" />
-      <path d="M6 6l12 12" />
-    </svg>
-  );
-}
-
-/* ── shared button style tokens ── */
-const ACTION_BTN_BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-button-neutral-border transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none";
-const ACTION_BTN_HOVER =
-  "hover:border-button-neutral-border-hover hover:text-text-primary";
 
 export function AnimationCard({
   id,
@@ -352,19 +196,6 @@ export function AnimationCard({
     () => (source === "css" ? toScopedLiveCss(liveCode, id) : ""),
     [id, liveCode, source],
   );
-  const maximizedEditorLineCount = useMemo(() => {
-    const lineCount = liveCode.split(/\r\n|\r|\n/).length;
-    return Math.max(32, lineCount + 2);
-  }, [liveCode]);
-  const maximizedEditorHeightPx = maximizedEditorLineCount * 22;
-  const editorExtensions = useMemo(
-    () =>
-      source === "css"
-        ? [css()]
-        : [html({ autoCloseTags: true, matchClosingTags: true })],
-    [source],
-  );
-  const editorTheme = themeMode === "dark" ? githubDark : githubLight;
 
   const handleCopy = async () => {
     try {
@@ -572,58 +403,15 @@ export function AnimationCard({
           </div>
         </div>
 
-        <div
-          id={`${id}-code-panel`}
-          className={`code-panel relative mt-1 mb-4 flex min-h-0 flex-1 flex-col overflow-hidden ${
-            isMaximized
-              ? "rounded-b-3xl p-6 pt-2"
-              : "max-h-[6.5rem] rounded-b-2xl px-4"
-          }`}
-          style={{
-            background:
-              "color-mix(in oklab, var(--color-surface-card-subtle) 92%, var(--color-app-bg))",
-          }}
-        >
-          <label id={`${id}-code-editor-label`} className="sr-only">
-            Live code editor for {title}
-          </label>
-          <div
-            className={`border-border-strong bg-surface-code focus-within:border-accent-brand focus-within:ring-accent-brand overflow-hidden rounded-lg border shadow-inner focus-within:ring-1 ${
-              isMaximized ? "p-3" : "p-2"
-            }`}
-          >
-            {isMaximized ? (
-              <CodeMirror
-                id={`${id}-code-editor`}
-                value={liveCode}
-                onChange={(value) => setLiveCode(value)}
-                extensions={editorExtensions}
-                theme={editorTheme}
-                basicSetup={{
-                  foldGutter: false,
-                  lineNumbers: true,
-                  highlightActiveLineGutter: false,
-                  highlightActiveLine: false,
-                }}
-                height={`${maximizedEditorHeightPx}px`}
-                maxHeight={`${maximizedEditorHeightPx}px`}
-                className="code-block code-editor text-text-tertiary min-h-0 w-full bg-transparent pr-1 font-mono text-sm leading-relaxed focus-visible:outline-none"
-                aria-labelledby={`${id}-code-editor-label`}
-                aria-describedby={`${id}-code-hint`}
-              />
-            ) : (
-              <textarea
-                id={`${id}-code-editor`}
-                value={liveCode}
-                onChange={(event) => setLiveCode(event.target.value)}
-                className="code-block text-text-tertiary min-h-[3.875rem] w-full resize-none overflow-auto bg-transparent pr-1 font-mono text-[10px] leading-relaxed focus-visible:outline-none"
-                aria-labelledby={`${id}-code-editor-label`}
-                aria-describedby={`${id}-code-hint`}
-                spellCheck={false}
-              />
-            )}
-          </div>
-        </div>
+        <LiveCodeEditor
+          id={id}
+          title={title}
+          value={liveCode}
+          onChange={setLiveCode}
+          source={source}
+          themeMode={themeMode}
+          isMaximized={isMaximized}
+        />
 
         <span className="sr-only" aria-live="polite">
           {copyState === "copied"

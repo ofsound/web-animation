@@ -1,24 +1,25 @@
 # Web Animation Gallery + Admin API
 
-A showcase of CSS animations built with **Tailwind CSS v4**, React 19, and Vite. It now includes a Hono + Better Auth + Drizzle backend for database-driven demo management and an `/admin` shell route.
+A React + Vite gallery backed by a Hono API and Postgres.
+
+The gallery now loads **only** from published demo records in the database. Each demo is rendered inside an isolated sandbox frame from stored demo files (`html`, `css`, `js`, `tailwind_css`, `meta`). There is no local file-based demo fallback in the app.
 
 ## Tech Stack
 
-- **React 19** + TypeScript
-- **React Router** (BrowserRouter)
-- **Vite** for dev/build
-- **Tailwind CSS v4** with custom keyframes and theme tokens
-- Light/dark themes with `prefers-reduced-motion` support
-- **Hono** API (`/api/*`) for admin CRUD/auth endpoints
-- **Better Auth** email/password auth with single-admin policy
-- **Drizzle ORM + Drizzle Kit** for schema/migrations
-- **Neon Postgres** (via `@neondatabase/serverless`)
+- React 19 + TypeScript
+- React Router (BrowserRouter)
+- Vite
+- Tailwind CSS v4
+- Hono API (`/api/*`)
+- Better Auth (email/password)
+- Drizzle ORM + Drizzle Kit
+- Neon Postgres (`@neondatabase/serverless`)
 
 ## Commands
 
 ```bash
 npm install
-npm run dev      # Start dev server
+npm run dev      # Start frontend dev server
 npm run dev:api  # Start Hono API server on :8787
 npm run build    # Production build
 npm run lint     # ESLint
@@ -27,82 +28,73 @@ npm run env:check
 npm run db:generate
 npm run db:migrate
 npm run admin:seed
-npm run demos:import
 ```
 
 ## Project Structure
 
 ```
 src/
-├── admin/                      # Admin shell route UI (/admin)
-├── App.tsx                     # Main layout, mode toggle, route-driven deep links
-├── components/                 # AnimationCard, CategorySection, SectionNav
-├── hooks/                      # useActiveSection, useTheme
+├── admin/                      # Admin UI (/admin)
+├── App.tsx                     # Gallery shell + route behavior
+├── components/                 # Gallery UI + isolated preview frames
 ├── data/
-│   ├── demoRegistry.ts         # Gallery data + demo route slug helpers
-│   ├── animations.ts           # Tailwind demo metadata
-│   └── cssAnimations.ts        # Native CSS demo/category normalization
-├── tailwindDemos/demos/        # Tailwind React demo components + catalog
-├── cssDemos/demos/             # Native CSS demo components + catalog
-└── index.css                   # Tailwind + theme variables + keyframes
+│   ├── demoRegistry.ts         # Route + registry helpers
+│   └── publicGallery.tsx       # Public API -> runtime gallery mapping
+└── index.css                   # Theme + Tailwind styles
 server/
-├── app.ts                      # Hono app + auth/admin route mount
+├── app.ts                      # Hono app wiring
 ├── auth.ts                     # Better Auth config
 ├── db/
 │   ├── client.ts               # Drizzle + Neon client
-│   └── schema.ts               # Better Auth + demo CMS tables
-├── routes/admin.ts             # Protected admin CRUD/reorder API
-└── scripts/ensure-admin.ts     # Seed single admin account
+│   └── schema.ts               # Auth + demo CMS tables
+├── routes/
+│   ├── admin.ts                # Protected admin CRUD/reorder/publish
+│   └── public.ts               # Public gallery endpoint
+└── scripts/
+    ├── check-env.ts
+    └── ensure-admin.ts
 api/
 └── [...route].ts               # Vercel serverless entry (Node runtime)
 ```
 
 ## Environment
 
-Copy `.env.example` to `.env` and set values:
+Copy `.env.example` to `.env` and set:
 
-- `DATABASE_URL` (Neon connection string)
+- `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
 - `BETTER_AUTH_URL`
 - `BETTER_AUTH_TRUSTED_ORIGINS`
-- `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD`
+- `ADMIN_EMAIL`
+- `ADMIN_NAME`
+- `ADMIN_PASSWORD`
 
-## First-Time Admin Setup
+## First-Time Setup
 
 1. Validate environment:
    - `npm run env:check`
 2. Run migrations:
    - `npm run db:generate`
    - `npm run db:migrate`
-3. Seed the single admin account:
+3. Seed the admin user:
    - `npm run admin:seed`
-4. Import static demos into the database:
-   - `npm run demos:import`
-   - Optional safe preview: `npm run demos:import -- --dry-run`
-   - Optional overwrite of importer-managed rows: `npm run demos:import -- --force-sync`
-5. Start both servers:
+4. Start both servers:
    - API: `npm run dev:api`
    - Frontend: `npm run dev`
-6. Open `/admin` and sign in.
+5. Open `/admin` to create categories/demos and publish them.
+
+If no demos are published, the gallery will be empty.
 
 ## Routing & Deep Links
 
-- Mode root routes:
+- Mode roots:
   - `/tailwind`
   - `/css`
-- Demo deep-link route:
+- Demo route:
   - `/:mode/:title-slug~demo-id`
   - Example: `/tailwind/gradient-border-spin~hover-gradient-border`
-- Legacy `#hash` links are redirected to the matching route.
+- Legacy `#hash` links are redirected to canonical routes.
 
 ### BrowserRouter Hosting Note
 
-Because the app uses `BrowserRouter`, production hosting must rewrite non-asset
-requests to `index.html` so direct deep links load correctly.
-
-## Adding Demos
-
-1. Tailwind demo:
-Add component in `src/tailwindDemos/demos/**`, export it via `src/tailwindDemos/demos/index.ts`, and add metadata entry in `src/data/animations.ts`.
-2. Native CSS demo:
-Add component/module CSS in `src/cssDemos/demos/**`, export in `src/cssDemos/demos/index.ts`, and register in `src/cssDemos/demos/catalog.ts`.
+Because the app uses `BrowserRouter`, production hosting must rewrite non-asset requests to `index.html` so direct deep links resolve correctly.

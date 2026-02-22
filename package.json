@@ -16,7 +16,6 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "env:check": "tsx server/scripts/check-env.ts",
-    "demos:import": "tsx server/scripts/import-static-demos.ts",
     "admin:seed": "BETTER_AUTH_ALLOW_SIGNUP=true tsx server/scripts/ensure-admin.ts"
   },
   "dependencies": {
@@ -65,7 +64,6 @@
   },
   "knip": {
     "ignore": [
-      "src/cssDemos/types/view-transitions.d.ts",
       "api/[...route].ts"
     ],
     "ignoreDependencies": [
