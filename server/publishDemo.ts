@@ -16,7 +16,11 @@ const demoFileSchema = z.object({
 export const publishDemoSchema = z.object({
   categoryId: z.string().min(1),
   title: z.string().trim().min(1),
-  slug: z.string().trim().min(1).optional(),
+  slug: z
+    .string()
+    .trim()
+    .optional()
+    .transform((s) => (s && s.length > 0 ? s : undefined)),
   description: z.string().default(""),
   difficulty: z.string().nullable().optional(),
   support: z.string().nullable().optional(),
