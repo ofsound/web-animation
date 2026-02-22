@@ -2,9 +2,9 @@
  * Standalone publish handler - Vercel's catch-all doesn't route nested paths correctly.
  * Takes precedence for POST /api/admin/demos/:id/publish.
  */
-import { auth } from "../../../server/auth.js";
-import { isAdminEmail } from "../../../server/env.js";
-import { publishDemo } from "../../../server/publishDemo.js";
+import { auth } from "../../../../server/auth.js";
+import { isAdminEmail } from "../../../../server/env.js";
+import { publishDemo } from "../../../../server/publishDemo.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
