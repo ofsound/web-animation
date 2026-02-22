@@ -133,6 +133,8 @@ function getPublicGalleryUrl(): string {
   }
 }
 
+const GALLERY_FETCH_TIMEOUT_MS = 15_000;
+
 export async function fetchPublicGallery(): Promise<PublicGalleryResponse> {
   if (import.meta.env.MODE === "test") {
     return { categories: [], demos: [] };
@@ -140,6 +142,7 @@ export async function fetchPublicGallery(): Promise<PublicGalleryResponse> {
 
   const response = await fetch(getPublicGalleryUrl(), {
     credentials: "include",
+    signal: AbortSignal.timeout(GALLERY_FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {

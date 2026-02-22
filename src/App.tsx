@@ -94,8 +94,12 @@ function App() {
       } catch (error) {
         if (cancelled) return;
         console.error("Failed to load database gallery.", error);
+        const isTimeout =
+          error instanceof DOMException && error.name === "AbortError";
         setRemoteGalleryError(
-          "Unable to load demos from the API. The gallery requires published database demos.",
+          isTimeout
+            ? "The gallery request timed out. Check that the API is reachable and environment variables (e.g. DATABASE_URL) are set on Vercel."
+            : "Unable to load demos from the API. The gallery requires published database demos.",
         );
       } finally {
         if (!cancelled) {
