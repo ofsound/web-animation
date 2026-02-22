@@ -141,7 +141,7 @@ export async function fetchPublicGallery(): Promise<PublicGalleryResponse> {
   }
 
   const response = await fetch(getPublicGalleryUrl(), {
-    credentials: "include",
+    credentials: "omit",
     signal: AbortSignal.timeout(GALLERY_FETCH_TIMEOUT_MS),
   });
 

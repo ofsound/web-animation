@@ -96,11 +96,15 @@ function App() {
         console.error("Failed to load database gallery.", error);
         const isTimeout =
           error instanceof DOMException && error.name === "AbortError";
-        setRemoteGalleryError(
-          isTimeout
-            ? "The gallery request timed out. Check that the API is reachable and environment variables (e.g. DATABASE_URL) are set on Vercel."
-            : "Unable to load demos from the API. The gallery requires published database demos.",
-        );
+        const isNetworkError =
+          error instanceof TypeError ||
+          (error instanceof Error && /load failed|failed to fetch|networkerror/i.test(error.message));
+        const message = isTimeout
+          ? "The gallery request timed out. Check that the API is reachable and environment variables (e.g. DATABASE_URL) are set on Vercel."
+          : isNetworkError
+            ? "Network error: the gallery API is unreachable. The API may be down or blocking the request."
+            : `Unable to load demos: ${error instanceof Error ? error.message : "Unknown error"}`;
+        setRemoteGalleryError(message);
       } finally {
         if (!cancelled) {
           setIsRemoteGalleryLoading(false);
