@@ -5,13 +5,14 @@ import { AnimationCard } from "./components/AnimationCard";
 import { CategoryIcon } from "./components/CategoryIcon";
 import { CategorySection } from "./components/CategorySection";
 import {
-  getDemoRoutePath,
+  createGalleryRegistry,
   getGalleryData,
-  resolveDemoFromRoute,
-  resolveLegacyHashToRoute,
+  type GalleryDataRuntime,
+  type GalleryRegistry,
   type DemoEntry,
   type GalleryMode,
 } from "./data/demoRegistry";
+import { fetchPublicGallery, toGalleryDataByMode } from "./data/publicGallery";
 import { useActiveSection } from "./hooks/useActiveSection";
 import { useTheme } from "./hooks/useTheme";
 import type { Category } from "./types/demo";
@@ -63,7 +64,7 @@ type PendingLegacySectionScroll = {
   token: number;
 };
 
-function parseRoute(pathname: string): ParsedRoute {
+function parseRoute(pathname: string, galleryRegistry: GalleryRegistry): ParsedRoute {
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) {
     return { kind: "invalid", redirectPath: `/${DEFAULT_MODE}` };
@@ -90,12 +91,12 @@ function parseRoute(pathname: string): ParsedRoute {
     return { kind: "invalid", redirectPath: `/${mode}` };
   }
 
-  const resolved = resolveDemoFromRoute(mode, decodedSlug);
+  const resolved = galleryRegistry.resolveDemoFromRoute(mode, decodedSlug);
   if (!resolved) {
     return { kind: "invalid", redirectPath: `/${mode}` };
   }
 
-  const canonicalPath = getDemoRoutePath(mode, resolved.demoId);
+  const canonicalPath = galleryRegistry.getDemoRoutePath(mode, resolved.demoId);
   return {
     kind: "demo",
     mode,
@@ -108,14 +109,6 @@ function parseRoute(pathname: string): ParsedRoute {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const parsedRoute = useMemo(
-    () => parseRoute(location.pathname),
-    [location.pathname],
-  );
-  const effectiveGalleryMode =
-    parsedRoute.kind === "invalid" ? DEFAULT_MODE : parsedRoute.mode;
-  const activeMaximizedDemoId =
-    parsedRoute.kind === "demo" ? parsedRoute.demoId : null;
   const { theme, toggleTheme } = useTheme();
   const activeNavigationTokenRef = useRef(0);
   const pendingLegacySectionScrollRef =
@@ -133,13 +126,65 @@ function App() {
     css: new Set(),
   });
 
-  const galleryDataByMode = useMemo<Record<GalleryMode, GalleryDataView>>(
+  const staticGalleryDataByMode = useMemo<Record<GalleryMode, GalleryDataView>>(
     () => ({
       tailwind: getGalleryData("tailwind"),
       css: getGalleryData("css"),
     }),
     [],
   );
+  const [remoteGalleryDataByMode, setRemoteGalleryDataByMode] = useState<
+    Record<GalleryMode, GalleryDataRuntime> | null
+  >(null);
+  const [isRemoteGalleryLoading, setIsRemoteGalleryLoading] = useState(true);
+  const galleryDataByMode = useMemo<Record<GalleryMode, GalleryDataView>>(
+    () => remoteGalleryDataByMode ?? staticGalleryDataByMode,
+    [remoteGalleryDataByMode, staticGalleryDataByMode],
+  );
+  const galleryRegistry = useMemo(
+    () => createGalleryRegistry(galleryDataByMode),
+    [galleryDataByMode],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRemoteGallery = async () => {
+      try {
+        const payload = await fetchPublicGallery();
+        if (cancelled) return;
+
+        const runtimeDataByMode = toGalleryDataByMode(payload);
+        const demoCount =
+          runtimeDataByMode.tailwind.demoCategoryById.size +
+          runtimeDataByMode.css.demoCategoryById.size;
+
+        if (demoCount > 0) {
+          setRemoteGalleryDataByMode(runtimeDataByMode);
+        }
+      } catch (error) {
+        console.error("Failed to load database gallery. Falling back to static data.", error);
+      } finally {
+        if (!cancelled) {
+          setIsRemoteGalleryLoading(false);
+        }
+      }
+    };
+
+    void loadRemoteGallery();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const parsedRoute = useMemo(
+    () => parseRoute(location.pathname, galleryRegistry),
+    [galleryRegistry, location.pathname],
+  );
+  const effectiveGalleryMode =
+    parsedRoute.kind === "invalid" ? DEFAULT_MODE : parsedRoute.mode;
+  const activeMaximizedDemoId =
+    parsedRoute.kind === "demo" ? parsedRoute.demoId : null;
   const maximizedDemoQueue = useMemo<QueuedDemo[]>(
     () =>
       (["tailwind", "css"] as const).flatMap((mode) => {
@@ -191,9 +236,9 @@ function App() {
       const nextDemo = maximizedDemoQueue[nextIndex];
       if (!nextDemo) return;
 
-      navigate(getDemoRoutePath(nextDemo.mode, nextDemo.id));
+      navigate(galleryRegistry.getDemoRoutePath(nextDemo.mode, nextDemo.id));
     },
-    [activeMaximizedDemoIndex, maximizedDemoQueue, navigate],
+    [activeMaximizedDemoIndex, galleryRegistry, maximizedDemoQueue, navigate],
   );
 
   const sectionIds = useMemo(
@@ -420,6 +465,8 @@ function App() {
   );
 
   useEffect(() => {
+    if (isRemoteGalleryLoading) return;
+
     if (parsedRoute.kind === "invalid") {
       navigate(parsedRoute.redirectPath, { replace: true });
       return;
@@ -427,12 +474,14 @@ function App() {
     if (parsedRoute.kind === "demo" && !parsedRoute.isCanonical) {
       navigate(parsedRoute.canonicalPath, { replace: true });
     }
-  }, [navigate, parsedRoute]);
+  }, [isRemoteGalleryLoading, navigate, parsedRoute]);
 
   useEffect(() => {
+    if (isRemoteGalleryLoading) return;
+
     const handleLegacyHashNavigation = () => {
       const hash = window.location.hash.replace("#", "");
-      const resolved = resolveLegacyHashToRoute(hash);
+      const resolved = galleryRegistry.resolveLegacyHashToRoute(hash);
       if (!resolved) return;
 
       if (resolved.kind === "section") {
@@ -453,7 +502,7 @@ function App() {
 
     return () =>
       window.removeEventListener("hashchange", handleLegacyHashNavigation);
-  }, [navigate, nextNavigationToken]);
+  }, [galleryRegistry, isRemoteGalleryLoading, navigate, nextNavigationToken]);
 
   useEffect(() => {
     const pending = pendingLegacySectionScrollRef.current;
@@ -672,7 +721,12 @@ function App() {
                         closeMaximizedDemo();
                         return;
                       }
-                      navigate(getDemoRoutePath(effectiveGalleryMode, demo.id));
+                      navigate(
+                        galleryRegistry.getDemoRoutePath(
+                          effectiveGalleryMode,
+                          demo.id,
+                        ),
+                      );
                     }}
                     canGoPrev={canMaximizedDemoGoPrev}
                     canGoNext={canMaximizedDemoGoNext}

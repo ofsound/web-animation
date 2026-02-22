@@ -46,6 +46,26 @@ type TailwindGalleryData = GalleryData<AnimationCategoryId, TailwindDemo>;
 type CssGalleryData = GalleryData<CssAnimationCategoryId, CssAnimationDemo>;
 type AnyGalleryData = TailwindGalleryData | CssGalleryData;
 
+export interface GalleryDataRuntime {
+  categories: Category[];
+  demosByCategory: ReadonlyMap<string, DemoEntry[]>;
+  demoCategoryById: ReadonlyMap<string, string>;
+  categoryCounts: ReadonlyMap<string, number>;
+}
+
+export interface GalleryRegistry {
+  getGalleryData: (mode: GalleryMode) => GalleryDataRuntime;
+  resolveDemoFromRoute: (
+    mode: GalleryMode,
+    slug: string,
+  ) => { demoId: string; canonicalSlug: string } | null;
+  getDemoRoutePath: (mode: GalleryMode, demoId: string) => string;
+  resolveHashToModeAndTarget: (
+    hash: string,
+  ) => { mode: GalleryMode; targetId: string } | null;
+  resolveLegacyHashToRoute: (hash: string) => LegacyHashRoute | null;
+}
+
 const tailwindGalleryData: TailwindGalleryData = {
   categories: tailwindCategories,
   demosByCategory: tailwindDemosByCategory,
@@ -60,14 +80,21 @@ const cssGalleryData: CssGalleryData = {
   categoryCounts: cssCategoryCounts,
 };
 
-const sectionIdsByMode: Record<GalleryMode, Set<string>> = {
-  tailwind: new Set(tailwindCategories.map((category) => category.id)),
-  css: new Set(cssAnimationCategories.map((category) => category.id)),
-};
-const demoCategoryByIdByMode: Record<GalleryMode, ReadonlyMap<string, string>> = {
-  tailwind: tailwindDemoCategoryById,
-  css: cssDemoCategoryById,
-};
+function slugifyTitle(title: string): string {
+  const base = title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return base || "demo";
+}
+
+export function toDemoRouteSlug(title: string, demoId: string): string {
+  return `${slugifyTitle(title)}~${demoId}`;
+}
 
 export function assertNoDuplicateDemoIdsByMode(
   demoCategoryMaps: Record<GalleryMode, ReadonlyMap<string, string>>,
@@ -90,78 +117,131 @@ export function assertNoDuplicateDemoIdsByMode(
   }
 }
 
-assertNoDuplicateDemoIdsByMode({
-  tailwind: tailwindDemoCategoryById,
-  css: cssDemoCategoryById,
-});
+export function createGalleryRegistry(
+  dataByMode: Record<GalleryMode, GalleryDataRuntime>,
+): GalleryRegistry {
+  const sectionIdsByMode: Record<GalleryMode, Set<string>> = {
+    tailwind: new Set(dataByMode.tailwind.categories.map((category) => category.id)),
+    css: new Set(dataByMode.css.categories.map((category) => category.id)),
+  };
 
-const demoModeById = new Map<string, GalleryMode>([
-  ...Array.from(tailwindDemoCategoryById.keys()).map(
-    (id) => [id, "tailwind"] as const,
-  ),
-  ...Array.from(cssDemoCategoryById.keys()).map((id) => [id, "css"] as const),
-]);
+  const demoCategoryByIdByMode: Record<GalleryMode, ReadonlyMap<string, string>> = {
+    tailwind: dataByMode.tailwind.demoCategoryById,
+    css: dataByMode.css.demoCategoryById,
+  };
 
-const demoTitleByMode: Record<GalleryMode, Map<string, string>> = {
-  tailwind: new Map(),
-  css: new Map(),
-};
-for (const demoList of tailwindDemosByCategory.values()) {
-  for (const demo of demoList) {
-    demoTitleByMode.tailwind.set(demo.id, demo.title);
+  assertNoDuplicateDemoIdsByMode(demoCategoryByIdByMode);
+
+  const demoModeById = new Map<string, GalleryMode>();
+  const demoTitleByMode: Record<GalleryMode, Map<string, string>> = {
+    tailwind: new Map(),
+    css: new Map(),
+  };
+
+  for (const mode of ["tailwind", "css"] as const) {
+    for (const category of dataByMode[mode].categories) {
+      const demos = dataByMode[mode].demosByCategory.get(category.id) ?? [];
+      for (const demo of demos) {
+        demoModeById.set(demo.id, mode);
+        demoTitleByMode[mode].set(demo.id, demo.title);
+      }
+    }
   }
-}
-for (const demoList of cssDemosByCategory.values()) {
-  for (const demo of demoList) {
-    demoTitleByMode.css.set(demo.id, demo.title);
-  }
-}
 
-function slugifyTitle(title: string): string {
-  const base = title
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+  const getDemoRoutePath = (mode: GalleryMode, demoId: string): string => {
+    const title = demoTitleByMode[mode].get(demoId);
+    if (!title) {
+      return `/${mode}`;
+    }
 
-  return base || "demo";
-}
+    return `/${mode}/${toDemoRouteSlug(title, demoId)}`;
+  };
 
-export function toDemoRouteSlug(title: string, demoId: string): string {
-  return `${slugifyTitle(title)}~${demoId}`;
-}
+  const resolveHashToModeAndTarget = (
+    hash: string,
+  ): { mode: GalleryMode; targetId: string } | null => {
+    if (!hash) return null;
 
-export function resolveDemoFromRoute(
-  mode: GalleryMode,
-  slug: string,
-): { demoId: string; canonicalSlug: string } | null {
-  if (!slug) return null;
-
-  const separatorIndex = slug.lastIndexOf("~");
-  if (separatorIndex <= 0 || separatorIndex >= slug.length - 1) return null;
-
-  const demoId = slug.slice(separatorIndex + 1);
-  if (demoModeById.get(demoId) !== mode) return null;
-
-  const title = demoTitleByMode[mode].get(demoId);
-  if (!title) return null;
+    if (sectionIdsByMode.tailwind.has(hash)) {
+      return { mode: "tailwind", targetId: hash };
+    }
+    if (demoCategoryByIdByMode.tailwind.has(hash)) {
+      return { mode: "tailwind", targetId: hash };
+    }
+    if (sectionIdsByMode.css.has(hash)) {
+      return { mode: "css", targetId: hash };
+    }
+    if (demoCategoryByIdByMode.css.has(hash)) {
+      return { mode: "css", targetId: hash };
+    }
+    return null;
+  };
 
   return {
-    demoId,
-    canonicalSlug: toDemoRouteSlug(title, demoId),
+    getGalleryData: (mode: GalleryMode) => dataByMode[mode],
+    resolveDemoFromRoute: (mode: GalleryMode, slug: string) => {
+      if (!slug) return null;
+
+      const separatorIndex = slug.lastIndexOf("~");
+      if (separatorIndex <= 0 || separatorIndex >= slug.length - 1) return null;
+
+      const demoId = slug.slice(separatorIndex + 1);
+      if (demoModeById.get(demoId) !== mode) return null;
+
+      const title = demoTitleByMode[mode].get(demoId);
+      if (!title) return null;
+
+      return {
+        demoId,
+        canonicalSlug: toDemoRouteSlug(title, demoId),
+      };
+    },
+    getDemoRoutePath,
+    resolveHashToModeAndTarget,
+    resolveLegacyHashToRoute: (hash: string) => {
+      const resolved = resolveHashToModeAndTarget(hash);
+      if (!resolved) return null;
+
+      const { mode, targetId } = resolved;
+      if (sectionIdsByMode[mode].has(targetId)) {
+        return {
+          kind: "section",
+          mode,
+          sectionId: targetId,
+          path: `/${mode}`,
+        };
+      }
+
+      if (demoCategoryByIdByMode[mode].has(targetId)) {
+        return {
+          kind: "demo",
+          mode,
+          demoId: targetId,
+          path: getDemoRoutePath(mode, targetId),
+        };
+      }
+
+      return null;
+    },
   };
 }
 
-export function getDemoRoutePath(mode: GalleryMode, demoId: string): string {
-  const title = demoTitleByMode[mode].get(demoId);
-  if (!title) {
-    return `/${mode}`;
-  }
+const staticGalleryDataByMode: Record<GalleryMode, GalleryDataRuntime> = {
+  tailwind: {
+    categories: tailwindGalleryData.categories,
+    demosByCategory: tailwindGalleryData.demosByCategory,
+    demoCategoryById: tailwindGalleryData.demoCategoryById,
+    categoryCounts: tailwindGalleryData.categoryCounts,
+  },
+  css: {
+    categories: cssGalleryData.categories,
+    demosByCategory: cssGalleryData.demosByCategory,
+    demoCategoryById: cssGalleryData.demoCategoryById,
+    categoryCounts: cssGalleryData.categoryCounts,
+  },
+};
 
-  return `/${mode}/${toDemoRouteSlug(title, demoId)}`;
-}
+const staticGalleryRegistry = createGalleryRegistry(staticGalleryDataByMode);
 
 export function getGalleryData(mode: "tailwind"): TailwindGalleryData;
 export function getGalleryData(mode: "css"): CssGalleryData;
@@ -170,49 +250,24 @@ export function getGalleryData(mode: GalleryMode): AnyGalleryData {
   return mode === "tailwind" ? tailwindGalleryData : cssGalleryData;
 }
 
+export function resolveDemoFromRoute(
+  mode: GalleryMode,
+  slug: string,
+): { demoId: string; canonicalSlug: string } | null {
+  return staticGalleryRegistry.resolveDemoFromRoute(mode, slug);
+}
+
+export function getDemoRoutePath(mode: GalleryMode, demoId: string): string {
+  return staticGalleryRegistry.getDemoRoutePath(mode, demoId);
+}
+
 export function resolveHashToModeAndTarget(hash: string): {
   mode: GalleryMode;
   targetId: string;
 } | null {
-  if (!hash) return null;
-
-  if (sectionIdsByMode.tailwind.has(hash)) {
-    return { mode: "tailwind", targetId: hash };
-  }
-  if (tailwindDemoCategoryById.has(hash)) {
-    return { mode: "tailwind", targetId: hash };
-  }
-  if (sectionIdsByMode.css.has(hash)) {
-    return { mode: "css", targetId: hash };
-  }
-  if (cssDemoCategoryById.has(hash)) {
-    return { mode: "css", targetId: hash };
-  }
-  return null;
+  return staticGalleryRegistry.resolveHashToModeAndTarget(hash);
 }
 
 export function resolveLegacyHashToRoute(hash: string): LegacyHashRoute | null {
-  const resolved = resolveHashToModeAndTarget(hash);
-  if (!resolved) return null;
-
-  const { mode, targetId } = resolved;
-  if (sectionIdsByMode[mode].has(targetId)) {
-    return {
-      kind: "section",
-      mode,
-      sectionId: targetId,
-      path: `/${mode}`,
-    };
-  }
-
-  if (demoCategoryByIdByMode[mode].has(targetId)) {
-    return {
-      kind: "demo",
-      mode,
-      demoId: targetId,
-      path: getDemoRoutePath(mode, targetId),
-    };
-  }
-
-  return null;
+  return staticGalleryRegistry.resolveLegacyHashToRoute(hash);
 }

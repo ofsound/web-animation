@@ -18,6 +18,14 @@ export default defineConfig(({ mode }) => {
       }),
       tailwindcss(),
     ],
+    server: {
+      proxy: {
+        "/api": {
+          target: env.VITE_API_ORIGIN ?? "http://localhost:8787",
+          changeOrigin: false,
+        },
+      },
+    },
     test: {
       globals: true,
       environment: "jsdom",

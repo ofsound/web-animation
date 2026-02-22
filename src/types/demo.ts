@@ -14,7 +14,7 @@ export interface Category<TId extends string = string> {
   description: string;
 }
 
-export type DemoSource = "tailwind" | "css";
+export type DemoSource = "tailwind" | "css" | "database";
 export type DemoDifficulty = "Basic" | "Intermediate" | "Advanced";
 
 export type SupportLevel =

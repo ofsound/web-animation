@@ -472,7 +472,7 @@ export function AnimationCard({
             key={`${id}-${replayKey}`}
             data-live-demo-root={id}
             className={`flex h-full items-center justify-center ${
-              source === "css" ? "w-full" : ""
+              source !== "tailwind" ? "w-full" : ""
             }`}
           >
             {source === "tailwind" ? (
@@ -484,11 +484,13 @@ export function AnimationCard({
               ) : (
                 children
               )
-            ) : (
+            ) : source === "css" ? (
               <>
                 {liveCss ? <style>{liveCss}</style> : null}
                 {children}
               </>
+            ) : (
+              children
             )}
           </div>
           <button

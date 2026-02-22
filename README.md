@@ -1,6 +1,6 @@
-# Tailwind Animation Editorial Gallery
+# Web Animation Gallery + Admin API
 
-A showcase of CSS animations built with **Tailwind CSS v4**, React 19, and Vite. Browse hover effects, entrance animations, loading states, text effects, and complex keyframes—each with copyable code and deep-linkable URLs.
+A showcase of CSS animations built with **Tailwind CSS v4**, React 19, and Vite. It now includes a Hono + Better Auth + Drizzle backend for database-driven demo management and an `/admin` shell route.
 
 ## Tech Stack
 
@@ -9,21 +9,32 @@ A showcase of CSS animations built with **Tailwind CSS v4**, React 19, and Vite.
 - **Vite** for dev/build
 - **Tailwind CSS v4** with custom keyframes and theme tokens
 - Light/dark themes with `prefers-reduced-motion` support
+- **Hono** API (`/api/*`) for admin CRUD/auth endpoints
+- **Better Auth** email/password auth with single-admin policy
+- **Drizzle ORM + Drizzle Kit** for schema/migrations
+- **Neon Postgres** (via `@neondatabase/serverless`)
 
 ## Commands
 
 ```bash
 npm install
 npm run dev      # Start dev server
+npm run dev:api  # Start Hono API server on :8787
 npm run build    # Production build
 npm run lint     # ESLint
 npm run test     # Vitest
+npm run env:check
+npm run db:generate
+npm run db:migrate
+npm run admin:seed
+npm run demos:import
 ```
 
 ## Project Structure
 
 ```
 src/
+├── admin/                      # Admin shell route UI (/admin)
 ├── App.tsx                     # Main layout, mode toggle, route-driven deep links
 ├── components/                 # AnimationCard, CategorySection, SectionNav
 ├── hooks/                      # useActiveSection, useTheme
@@ -34,7 +45,45 @@ src/
 ├── tailwindDemos/demos/        # Tailwind React demo components + catalog
 ├── cssDemos/demos/             # Native CSS demo components + catalog
 └── index.css                   # Tailwind + theme variables + keyframes
+server/
+├── app.ts                      # Hono app + auth/admin route mount
+├── auth.ts                     # Better Auth config
+├── db/
+│   ├── client.ts               # Drizzle + Neon client
+│   └── schema.ts               # Better Auth + demo CMS tables
+├── routes/admin.ts             # Protected admin CRUD/reorder API
+└── scripts/ensure-admin.ts     # Seed single admin account
+api/
+└── [...route].ts               # Vercel serverless entry (Node runtime)
 ```
+
+## Environment
+
+Copy `.env.example` to `.env` and set values:
+
+- `DATABASE_URL` (Neon connection string)
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `BETTER_AUTH_TRUSTED_ORIGINS`
+- `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD`
+
+## First-Time Admin Setup
+
+1. Validate environment:
+   - `npm run env:check`
+2. Run migrations:
+   - `npm run db:generate`
+   - `npm run db:migrate`
+3. Seed the single admin account:
+   - `npm run admin:seed`
+4. Import static demos into the database:
+   - `npm run demos:import`
+   - Optional safe preview: `npm run demos:import -- --dry-run`
+   - Optional overwrite of importer-managed rows: `npm run demos:import -- --force-sync`
+5. Start both servers:
+   - API: `npm run dev:api`
+   - Frontend: `npm run dev`
+6. Open `/admin` and sign in.
 
 ## Routing & Deep Links
 
