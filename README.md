@@ -119,7 +119,7 @@ This repo is configured for Vercel with `/Users/ben/Dev/REACT/web-animation/verc
 
 - `buildCommand`: `npm run build:vercel` (uses `vite build`)
 - `outputDirectory`: `dist`
-- SPA fallback route rewrite for BrowserRouter deep links
+- SPA fallback rewrite for BrowserRouter deep links, excluding `/api/*`
 
 ### 1) Push this repo to GitHub
 
