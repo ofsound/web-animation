@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, asc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, max } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "../auth.js";
 import { db } from "../db/client.js";
@@ -335,9 +335,11 @@ adminRoutes.post("/demos", async (c) => {
   }
 
   const [sortRow] = await db
-    .select({ maxSort: max(demos.sortOrder) })
+    .select({ sortOrder: demos.sortOrder })
     .from(demos)
-    .where(eq(demos.categoryId, parsed.data.categoryId));
+    .where(eq(demos.categoryId, parsed.data.categoryId))
+    .orderBy(desc(demos.sortOrder))
+    .limit(1);
 
   const [demo] = await db
     .insert(demos)
@@ -350,28 +352,26 @@ adminRoutes.post("/demos", async (c) => {
       description: parsed.data.description,
       difficulty: parsed.data.difficulty,
       support: parsed.data.support,
-      sortOrder: (sortRow?.maxSort ?? -1) + 1,
+      sortOrder: (sortRow?.sortOrder ?? -1) + 1,
     })
     .returning();
 
   const files = dedupeFiles(parsed.data.files);
+  let persistedFiles: typeof demoFiles.$inferSelect[] = [];
   if (files.length > 0) {
-    await db.insert(demoFiles).values(
-      files.map((file, sortOrder) => ({
-        id: createId("file"),
-        demoId: demo.id,
-        fileKind: file.fileKind,
-        content: file.content,
-        sortOrder,
-      })),
-    );
+    persistedFiles = await db
+      .insert(demoFiles)
+      .values(
+        files.map((file, sortOrder) => ({
+          id: createId("file"),
+          demoId: demo.id,
+          fileKind: file.fileKind,
+          content: file.content,
+          sortOrder,
+        })),
+      )
+      .returning();
   }
-
-  const persistedFiles = await db
-    .select()
-    .from(demoFiles)
-    .where(eq(demoFiles.demoId, demo.id))
-    .orderBy(asc(demoFiles.sortOrder));
 
   return c.json({ demo: { ...demo, files: persistedFiles } }, 201);
 });

@@ -25,7 +25,7 @@ type CategoryFormState = {
   description: string;
 };
 
-const API_TIMEOUT_MS = 15000;
+const API_TIMEOUT_MS = 30000;
 
 const INITIAL_CATEGORY_FORM: CategoryFormState = {
   type: "tailwind" as const,
