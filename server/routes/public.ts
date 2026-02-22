@@ -5,7 +5,7 @@ import { demoCategories, demoFiles, demos } from "../db/schema.js";
 
 export const publicRoutes = new Hono();
 
-publicRoutes.get("/gallery", async (c) => {
+export async function loadPublicGalleryPayload() {
   const categories = await db
     .select()
     .from(demoCategories)
@@ -33,11 +33,16 @@ publicRoutes.get("/gallery", async (c) => {
     filesByDemoId.set(file.demoId, existing);
   }
 
-  return c.json({
+  return {
     categories,
     demos: publishedDemos.map((demo) => ({
       ...demo,
       files: filesByDemoId.get(demo.id) ?? [],
     })),
-  });
+  };
+}
+
+publicRoutes.get("/gallery", async (c) => {
+  const payload = await loadPublicGalleryPayload();
+  return c.json(payload);
 });
