@@ -68,7 +68,7 @@
   },
   "knip": {
     "ignore": [
-      "api/[...route].ts",
+      "api/admin/[...route].ts",
       "src/tailwind-demo-safelist.ts"
     ],
     "ignoreDependencies": [
