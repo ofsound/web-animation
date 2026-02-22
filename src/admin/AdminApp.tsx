@@ -607,8 +607,8 @@ export default function AdminApp() {
     if (!confirmed) return;
 
     await runAction("delete-demo", async () => {
-      await apiRequest<{ success: boolean }>(`/api/admin/demos/${selectedDemo.id}`, {
-        method: "DELETE",
+      await apiRequest<{ success: boolean }>(`/api/admin/demos/${selectedDemo.id}/delete`, {
+        method: "POST",
       });
 
       clearDraftFromStorage(selectedDemo.id);

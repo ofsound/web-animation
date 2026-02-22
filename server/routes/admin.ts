@@ -453,6 +453,20 @@ adminRoutes.delete("/demos/:id", async (c) => {
   return c.json({ success: true });
 });
 
+adminRoutes.post("/demos/:id/delete", async (c) => {
+  const demoId = c.req.param("id");
+  const [deleted] = await db
+    .delete(demos)
+    .where(eq(demos.id, demoId))
+    .returning({ id: demos.id });
+
+  if (!deleted) {
+    return c.json({ error: "Demo not found" }, 404);
+  }
+
+  return c.json({ success: true });
+});
+
 adminRoutes.post("/demos/reorder", async (c) => {
   const body = await c.req.json().catch(() => null);
   const parsed = reorderDemosSchema.safeParse(body);
